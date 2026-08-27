@@ -1,26 +1,31 @@
-@import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap");
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #0d0b14;
+  color: #f3efe6;
+}
+
+@layer components {
+  .chip {
+    @apply border border-hairline px-4 py-2 rounded-full text-sm text-paperDim bg-panel cursor-pointer;
+  }
+  .chip.on {
+    @apply bg-amber text-[#241B00] border-amber font-semibold;
+  }
+  .btn-primary {
+    @apply bg-amber text-[#241B00] font-semibold rounded-full px-5 py-3 hover:brightness-95 transition;
+  }
+  .btn-ghost {
+    @apply bg-transparent border border-hairline text-paper rounded-full px-4 py-2 text-sm;
+  }
+  .field-input {
+    @apply w-full bg-panel border border-hairline text-paper rounded-[10px] px-3.5 py-3 text-sm outline-none focus:border-amber transition;
+  }
+  .card-float {
+    @apply bg-panel border border-hairline rounded-card transition hover:-translate-y-1.5 hover:shadow-[0_18px_32px_rgba(0,0,0,0.4)] hover:border-amber;
+  }
 }

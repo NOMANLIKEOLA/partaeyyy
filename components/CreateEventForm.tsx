@@ -28,6 +28,7 @@ export default function CreateEventForm({ userId }: { userId: string }) {
   const [venue, setVenue] = useState("");
   const [city, setCity] = useState("Lagos");
   const [description, setDescription] = useState("");
+  const [needsTickets, setNeedsTickets] = useState(true);
   const [tiers, setTiers] = useState<TierDraft[]>([
     { name: "Regular", price: "", quantity: "" }
   ]);
@@ -50,10 +51,14 @@ export default function CreateEventForm({ userId }: { userId: string }) {
       setError("Title, date and city are required.");
       return;
     }
-    const validTiers = tiers.filter((t) => t.name && t.price !== "" && t.quantity !== "");
-    if (validTiers.length === 0) {
-      setError("Add at least one ticket tier.");
-      return;
+
+    let validTiers: TierDraft[] = [];
+    if (needsTickets) {
+      validTiers = tiers.filter((t) => t.name && t.price !== "" && t.quantity !== "");
+      if (validTiers.length === 0) {
+        setError("Add at least one ticket tier, or mark this as a free event with no tickets.");
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -80,22 +85,24 @@ export default function CreateEventForm({ userId }: { userId: string }) {
       return;
     }
 
-    const { error: tiersError } = await supabase.from("ticket_types").insert(
-      validTiers.map((t) => ({
-        event_id: event.id,
-        name: t.name,
-        price: Number(t.price),
-        quantity: Number(t.quantity)
-      }))
-    );
+    if (validTiers.length > 0) {
+      const { error: tiersError } = await supabase.from("ticket_types").insert(
+        validTiers.map((t) => ({
+          event_id: event.id,
+          name: t.name,
+          price: Number(t.price),
+          quantity: Number(t.quantity)
+        }))
+      );
 
-    setSubmitting(false);
-
-    if (tiersError) {
-      setError(tiersError.message);
-      return;
+      if (tiersError) {
+        setSubmitting(false);
+        setError(tiersError.message);
+        return;
+      }
     }
 
+    setSubmitting(false);
     router.push(`/event/${event.id}`);
   }
 
@@ -162,38 +169,56 @@ export default function CreateEventForm({ userId }: { userId: string }) {
         />
       </div>
 
-      <div>
-        <label className="block text-[13px] text-paperDim mb-2">Ticket tiers</label>
-        {tiers.map((t, i) => (
-          <div key={i} className="grid grid-cols-[1.3fr_1fr_1fr] gap-2.5 mb-2.5">
-            <input
-              className="field-input"
-              placeholder="Tier name (e.g. VIP)"
-              value={t.name}
-              onChange={(e) => updateTier(i, "name", e.target.value)}
-            />
-            <input
-              className="field-input"
-              type="number"
-              min="0"
-              placeholder="Price (₦)"
-              value={t.price}
-              onChange={(e) => updateTier(i, "price", e.target.value)}
-            />
-            <input
-              className="field-input"
-              type="number"
-              min="0"
-              placeholder="Quantity"
-              value={t.quantity}
-              onChange={(e) => updateTier(i, "quantity", e.target.value)}
-            />
-          </div>
-        ))}
-        <button type="button" onClick={addTier} className="text-[12.5px] text-teal">
-          + Add another tier
+      <div className="flex items-center justify-between bg-panel border border-hairline rounded-[10px] px-3.5 py-3">
+        <div>
+          <div className="text-sm font-medium">This event needs tickets</div>
+          <div className="text-[12px] text-paperDim mt-0.5">Turn off for free, no-ticket events (RSVP only)</div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setNeedsTickets((v) => !v)}
+          className={`w-11 h-6 rounded-full relative transition ${needsTickets ? "bg-amber" : "bg-hairline"}`}
+        >
+          <span
+            className={`absolute top-0.5 w-5 h-5 rounded-full bg-ink transition-all ${needsTickets ? "left-[22px]" : "left-0.5"}`}
+          />
         </button>
       </div>
+
+      {needsTickets && (
+        <div>
+          <label className="block text-[13px] text-paperDim mb-2">Ticket tiers</label>
+          {tiers.map((t, i) => (
+            <div key={i} className="grid grid-cols-[1.3fr_1fr_1fr] gap-2.5 mb-2.5">
+              <input
+                className="field-input"
+                placeholder="Tier name (e.g. VIP)"
+                value={t.name}
+                onChange={(e) => updateTier(i, "name", e.target.value)}
+              />
+              <input
+                className="field-input"
+                type="number"
+                min="0"
+                placeholder="Price (₦)"
+                value={t.price}
+                onChange={(e) => updateTier(i, "price", e.target.value)}
+              />
+              <input
+                className="field-input"
+                type="number"
+                min="0"
+                placeholder="Quantity"
+                value={t.quantity}
+                onChange={(e) => updateTier(i, "quantity", e.target.value)}
+              />
+            </div>
+          ))}
+          <button type="button" onClick={addTier} className="text-[12.5px] text-teal">
+            + Add another tier
+          </button>
+        </div>
+      )}
 
       {error && <div className="text-[13px] text-coral">{error}</div>}
 

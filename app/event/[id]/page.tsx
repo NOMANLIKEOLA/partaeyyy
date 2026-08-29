@@ -1,19 +1,31 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import BuyBox from "@/components/BuyBox";
+import SaveButton from "@/components/SaveButton";
 
 export default async function EventDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
 
   const { data: event } = await supabase
     .from("events")
-    .select("*, ticket_types(*), users:organizer_id(full_name)")
+    .select("*, ticket_types(*), users:organizer_id(full_name, paystack_subaccount_code)")
     .eq("id", params.id)
     .single();
 
   if (!event) notFound();
 
   const { data: { user } } = await supabase.auth.getUser();
+
+  let alreadySaved = false;
+  if (user) {
+    const { data: savedRow } = await supabase
+      .from("saved_events")
+      .select("event_id")
+      .eq("user_id", user.id)
+      .eq("event_id", event.id)
+      .maybeSingle();
+    alreadySaved = !!savedRow;
+  }
 
   const date = new Date(event.event_date);
   const dateLabel = date.toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short" });
@@ -52,13 +64,17 @@ export default async function EventDetailPage({ params }: { params: { id: string
           </div>
         </div>
 
-        <BuyBox
-          eventId={event.id}
-          eventTitle={event.title}
-          ticketTypes={event.ticket_types}
-          userId={user?.id ?? null}
-          userEmail={user?.email ?? null}
-        />
+        <div>
+          <BuyBox
+            eventId={event.id}
+            eventTitle={event.title}
+            ticketTypes={event.ticket_types}
+            userId={user?.id ?? null}
+            userEmail={user?.email ?? null}
+            organizerSubaccountCode={event.users?.paystack_subaccount_code ?? null}
+          />
+          <SaveButton eventId={event.id} userId={user?.id ?? null} initiallySaved={alreadySaved} />
+        </div>
       </div>
     </>
   );

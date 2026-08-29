@@ -16,13 +16,15 @@ export default function BuyBox({
   eventTitle,
   ticketTypes,
   userId,
-  userEmail
+  userEmail,
+  organizerSubaccountCode
 }: {
   eventId: string;
   eventTitle: string;
   ticketTypes: TicketType[];
   userId: string | null;
   userEmail: string | null;
+  organizerSubaccountCode: string | null;
 }) {
   const [qty, setQty] = useState<Record<string, number>>({});
   const [paying, setPaying] = useState(false);
@@ -57,8 +59,9 @@ export default function BuyBox({
     const handler = window.PaystackPop.setup({
       key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
       email: userEmail,
-      amount: Math.round(total * 100), // kobo
+      amount: Math.round(total * 100),
       currency: "NGN",
+      ...(organizerSubaccountCode ? { subaccount: organizerSubaccountCode } : {}),
       metadata: {
         event_id: eventId,
         ticket_type_id: chosen.id,
@@ -94,57 +97,72 @@ export default function BuyBox({
     <>
       <Script src="https://js.paystack.co/v1/inline.js" strategy="lazyOnload" />
       <div className="bg-panel border border-hairline rounded-card p-5.5 h-fit">
-        <div className="text-[13px] text-paperDim mb-2">Select tickets</div>
+        {ticketTypes.length === 0 ? (
+          <>
+            <div className="text-[13px] text-paperDim mb-2">This is a free event</div>
+            <div className="text-sm mb-1">No ticket needed — just show up.</div>
+            <div className="text-[12.5px] text-paperDim">Save it below so you don't forget.</div>
+          </>
+        ) : (
+          <>
+            <div className="text-[13px] text-paperDim mb-2">Select tickets</div>
 
-        {ticketTypes.map((t) => {
-          const left = t.quantity - t.quantity_sold;
-          return (
-            <div key={t.id} className="flex justify-between items-center py-3.5 border-b border-hairline last:border-b-0">
-              <div>
-                <div className="text-sm font-medium">{t.name}</div>
-                <div className="text-[11.5px] text-paperDim mt-0.5">{left} left</div>
-              </div>
-              <div className="flex items-center">
-                <span className="font-mono text-[15px]">
-                  {t.price === 0 ? "Free" : `₦${t.price.toLocaleString()}`}
-                </span>
-                <div className="flex items-center gap-2.5 ml-3">
-                  <button
-                    className="w-6 h-6 rounded-full border border-hairline text-sm"
-                    onClick={() => setQuantity(t.id, -1, left)}
-                  >
-                    &minus;
-                  </button>
-                  <span className="w-4 text-center text-sm">{qty[t.id] ?? 0}</span>
-                  <button
-                    className="w-6 h-6 rounded-full border border-hairline text-sm"
-                    onClick={() => setQuantity(t.id, 1, left)}
-                  >
-                    +
-                  </button>
+            {ticketTypes.map((t) => {
+              const left = t.quantity - t.quantity_sold;
+              return (
+                <div key={t.id} className="flex justify-between items-center py-3.5 border-b border-hairline last:border-b-0">
+                  <div>
+                    <div className="text-sm font-medium">{t.name}</div>
+                    <div className="text-[11.5px] text-paperDim mt-0.5">{left} left</div>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="font-mono text-[15px]">
+                      {t.price === 0 ? "Free" : `₦${t.price.toLocaleString()}`}
+                    </span>
+                    <div className="flex items-center gap-2.5 ml-3">
+                      <button
+                        className="w-6 h-6 rounded-full border border-hairline text-sm"
+                        onClick={() => setQuantity(t.id, -1, left)}
+                      >
+                        &minus;
+                      </button>
+                      <span className="w-4 text-center text-sm">{qty[t.id] ?? 0}</span>
+                      <button
+                        className="w-6 h-6 rounded-full border border-hairline text-sm"
+                        onClick={() => setQuantity(t.id, 1, left)}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              );
+            })}
+
+            {error && <div className="text-[12.5px] text-coral mt-3">{error}</div>}
+
+            {!userId ? (
+              <Link href="/login" className="btn-primary w-full text-center block mt-4.5">
+                Log in to buy tickets
+              </Link>
+            ) : (
+              <form onSubmit={(e) => e.preventDefault()}>
+                <button
+                  type="submit"
+                  className="btn-primary w-full mt-4.5"
+                  disabled={paying}
+                  onClick={startCheckout}
+                >
+                  {paying ? "Opening Paystack..." : `Pay ₦${total.toLocaleString()} with Paystack`}
+                </button>
+              </form>
+            )}
+
+            <div className="text-center text-[11px] text-paperDim mt-2.5">
+              Secured payments powered by Paystack
             </div>
-          );
-        })}
-
-        {error && <div className="text-[12.5px] text-coral mt-3">{error}</div>}
-
-        {!userId ? (
-            <Link href="/login" className="btn-primary w-full text-center block mt-4.5">
-              Log in to buy tickets
-            </Link>
-          ) : (
-            <form onSubmit={(e) => e.preventDefault()}>
-              <button type="submit" className="btn-primary w-full mt-4.5" disabled={paying} onClick={startCheckout}>
-                {paying ? "Opening Paystack..." : `Pay ₦${total.toLocaleString()} with Paystack`}
-              </button>
-            </form>
-          )}
-
-        <div className="text-center text-[11px] text-paperDim mt-2.5">
-          Secured payments powered by Paystack
-        </div>
+          </>
+        )}
       </div>
     </>
   );

@@ -39,6 +39,8 @@ export default function Nav({ initialUserEmail }: { initialUserEmail: string | n
         PARTAEY<span className="text-amber">.</span>
       </Link>
 
+
+
       <div ref={wrapRef} className="flex items-center gap-7 text-sm text-paperDim">
         <Link href="/" className="hover:text-paper transition">Discover</Link>
 
@@ -89,6 +91,7 @@ export default function Nav({ initialUserEmail }: { initialUserEmail: string | n
               ) : (
                 <>
                   <Link href="/dashboard" className="block px-2.5 py-2 rounded-lg text-[13.5px] hover:bg-panel2" onClick={() => setOpenMenu(null)}>Dashboard</Link>
+                  <Link href="/payouts" className="block px-2.5 py-2 rounded-lg text-[13.5px] hover:bg-panel2" onClick={() => setOpenMenu(null)}>Payout account</Link>
                   <Link href="/profile" className="block px-2.5 py-2 rounded-lg text-[13.5px] hover:bg-panel2" onClick={() => setOpenMenu(null)}>Profile</Link>
                   <Link href="/contact" className="block px-2.5 py-2 rounded-lg text-[13.5px] hover:bg-panel2" onClick={() => setOpenMenu(null)}>Contact us</Link>
                   <div className="h-px bg-hairline my-1.5 mx-1" />

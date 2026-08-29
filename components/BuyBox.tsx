@@ -131,14 +131,16 @@ export default function BuyBox({
         {error && <div className="text-[12.5px] text-coral mt-3">{error}</div>}
 
         {!userId ? (
-          <Link href="/login" className="btn-primary w-full text-center block mt-4.5">
-            Log in to buy tickets
-          </Link>
-        ) : (
-          <button className="btn-primary w-full mt-4.5" disabled={paying} onClick={startCheckout}>
-            {paying ? "Opening Paystack..." : `Pay ₦${total.toLocaleString()} with Paystack`}
-          </button>
-        )}
+            <Link href="/login" className="btn-primary w-full text-center block mt-4.5">
+              Log in to buy tickets
+            </Link>
+          ) : (
+            <form onSubmit={(e) => e.preventDefault()}>
+              <button type="submit" className="btn-primary w-full mt-4.5" disabled={paying} onClick={startCheckout}>
+                {paying ? "Opening Paystack..." : `Pay ₦${total.toLocaleString()} with Paystack`}
+              </button>
+            </form>
+          )}
 
         <div className="text-center text-[11px] text-paperDim mt-2.5">
           Secured payments powered by Paystack

@@ -1,8 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-// Use in server components and route handlers. Respects the signed-in
-// user's session, so RLS policies apply normally.
 export function createClient() {
   const cookieStore = cookies();
 
@@ -15,19 +13,26 @@ export function createClient() {
           return cookieStore.get(name)?.value;
         },
         set(name: string, value: string, options) {
-          cookieStore.set({ name, value, ...options });
+          try {
+            cookieStore.set({ name, value, ...options });
+          } catch {
+            // Called from a Server Component during render — can't write
+            // cookies here. Harmless as long as middleware.ts (below) is
+            // handling session refresh; this is the documented pattern.
+          }
         },
         remove(name: string, options) {
-          cookieStore.set({ name, value: "", ...options });
+          try {
+            cookieStore.set({ name, value: "", ...options });
+          } catch {
+            // Same as above.
+          }
         }
       }
     }
   );
 }
 
-// Service-role client: bypasses RLS entirely. Only use this in trusted
-// server code (e.g. after verifying a Paystack payment) — never expose
-// the service role key to the browser.
 export function createServiceClient() {
   const { createClient: createSupabaseClient } = require("@supabase/supabase-js");
   return createSupabaseClient(

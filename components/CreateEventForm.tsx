@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { EventCategory } from "@/lib/types";
+import { NIGERIA_STATES } from "@/lib/nigeria";
 
 const CATEGORIES: EventCategory[] = [
   "Raves & nightlife",
@@ -26,7 +27,7 @@ export default function CreateEventForm({ userId }: { userId: string }) {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [venue, setVenue] = useState("");
-  const [city, setCity] = useState("Lagos");
+  const [city, setCity] = useState("");
   const [description, setDescription] = useState("");
   const [needsTickets, setNeedsTickets] = useState(true);
   const [tiers, setTiers] = useState<TierDraft[]>([
@@ -151,12 +152,13 @@ export default function CreateEventForm({ userId }: { userId: string }) {
       </div>
 
       <div>
-        <label className="block text-[13px] text-paperDim mb-2">City</label>
-        <select className="field-input" value={city} onChange={(e) => setCity(e.target.value)}>
-          {["Lagos", "Abuja", "Port Harcourt", "Ibadan", "Enugu"].map((c) => (
-            <option key={c}>{c}</option>
-          ))}
-        </select>
+            <label className="block text-[13px] text-paperDim mb-2">State</label>
+            <select className="field-input" value={city} onChange={(e) => setCity(e.target.value)}>
+              <option value="">Select a state</option>
+              {NIGERIA_STATES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
       </div>
 
       <div>

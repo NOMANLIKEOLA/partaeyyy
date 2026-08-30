@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import Nav from "@/components/Nav";
 import { createClient } from "@/lib/supabase/server";
@@ -15,7 +16,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en">
       <body className="font-sans pb-16">
-        <Nav initialUserEmail={user?.email ?? null} />
+        <Suspense fallback={<div className="h-[73px] border-b border-hairline" />}>
+          <Nav initialUserEmail={user?.email ?? null} />
+        </Suspense>
         <main className="max-w-[1140px] mx-auto px-10">{children}</main>
         <footer className="border-t border-hairline mt-16 px-10 py-8 text-paperDim text-xs flex justify-between">
           <div>PARTAEY — like you.</div>

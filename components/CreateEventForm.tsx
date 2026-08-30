@@ -115,7 +115,7 @@ export default function CreateEventForm({ userId }: { userId: string }) {
           className="field-input"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. Neon Lagoon — Amapiano All Night"
+          placeholder="e.g. Neon Lagoon - Amapiano All Night"
         />
       </div>
 
@@ -172,19 +172,21 @@ export default function CreateEventForm({ userId }: { userId: string }) {
       </div>
 
       <div className="flex items-center justify-between bg-panel border border-hairline rounded-[10px] px-3.5 py-3">
+
         <div>
-          <div className="text-sm font-medium">This event needs tickets</div>
-          <div className="text-[12px] text-paperDim mt-0.5">Turn off for free, no-ticket events (RSVP only)</div>
+            <div className="text-sm font-medium">This event needs tickets</div>
+            <div className="text-[12px] text-paperDim mt-0.5">Turn off for free, no-ticket events (RSVP only)</div>
         </div>
+
         <button
-          type="button"
-          onClick={() => setNeedsTickets((v) => !v)}
-          className={`w-11 h-6 rounded-full relative transition ${needsTickets ? "bg-amber" : "bg-hairline"}`}
-        >
-          <span
-            className={`absolute top-0.5 w-5 h-5 rounded-full bg-ink transition-all ${needsTickets ? "left-[22px]" : "left-0.5"}`}
-          />
-        </button>
+              type="button"
+              onClick={() => setNeedsTickets((v) => !v)}
+              className={`w-11 h-6 rounded-full relative transition ${needsTickets ? "bg-amber" : "bg-hairline"}`}
+            >
+              <span
+                className={`absolute top-0.5 w-5 h-5 rounded-full bg-ink transition-all ${needsTickets ? "left-[22px]" : "left-0.5"}`}
+              />
+            </button>
       </div>
 
       {needsTickets && (

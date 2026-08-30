@@ -21,7 +21,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </Suspense>
         <main className="max-w-[1140px] mx-auto px-10">{children}</main>
         <footer className="border-t border-hairline mt-16 px-10 py-8 text-paperDim text-xs flex justify-between">
-          <div>PARTAEY — like you.</div>
+          <div>PARTAEY - like you.</div>
           <div>&copy; {new Date().getFullYear()} Partaey</div>
         </footer>
       </body>

@@ -100,7 +100,7 @@ export default function BuyBox({
         {ticketTypes.length === 0 ? (
           <>
             <div className="text-[13px] text-paperDim mb-2">This is a free event</div>
-            <div className="text-sm mb-1">No ticket needed — just show up.</div>
+            <div className="text-sm mb-1">No ticket needed - just show up.</div>
             <div className="text-[12.5px] text-paperDim">Save it below so you don't forget.</div>
           </>
         ) : (

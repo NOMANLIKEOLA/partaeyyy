@@ -121,12 +121,12 @@ export default async function HomePage({
         <div className="text-paperDim text-sm py-16 text-center">
           {searchParams.city ? (
             <>
-              No events in {searchParams.city} yet — be the first to{" "}
+              No events in {searchParams.city} yet - be the first to{" "}
               <Link href="/create" className="text-amber underline">list one</Link> and put your city on the map.
             </>
           ) : (
             <>
-              No events yet — be the first to{" "}
+              No events yet - be the first to{" "}
               <Link href="/create" className="text-amber underline">list one</Link>.
             </>
           )}
@@ -145,7 +145,7 @@ export default async function HomePage({
         <div>
           <h3 className="text-lg font-semibold mb-1.5">Running an event? List it on Partaey.</h3>
           <p className="text-paperDim text-[13.5px]">
-            Set up ticket tiers, sell with Paystack, and track sales from one dashboard — free to list, and
+            Set up ticket tiers, sell with Paystack, and track sales from one dashboard - free to list, and
             seen by everyone in your state.
           </p>
         </div>

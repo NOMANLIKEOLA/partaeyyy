@@ -73,7 +73,7 @@ export default function Nav({ initialUserEmail }: { initialUserEmail: string | n
                 className={`block w-full text-left px-2.5 py-2 rounded-lg text-[13.5px] hover:bg-panel2 ${!activeCity ? "text-amber font-medium" : ""}`}
                 onClick={() => selectState(null)}
               >
-                All states — nationwide
+                All states - nationwide
               </button>
               <div className="h-px bg-hairline my-1 mx-1" />
               {NIGERIA_STATES.map((s) => (

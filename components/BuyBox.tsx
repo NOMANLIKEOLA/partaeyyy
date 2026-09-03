@@ -17,7 +17,10 @@ export default function BuyBox({
   ticketTypes,
   userId,
   userEmail,
-  organizerSubaccountCode
+  organizerSubaccountCode,
+  is18Plus,
+  viewerAge,
+  eventCancelled
 }: {
   eventId: string;
   eventTitle: string;
@@ -25,6 +28,9 @@ export default function BuyBox({
   userId: string | null;
   userEmail: string | null;
   organizerSubaccountCode: string | null;
+  is18Plus: boolean;
+  viewerAge: number | null;
+  eventCancelled: boolean;
 }) {
   const [qty, setQty] = useState<Record<string, number>>({});
   const [paying, setPaying] = useState(false);
@@ -32,6 +38,8 @@ export default function BuyBox({
 
   const total = ticketTypes.reduce((sum, t) => sum + (qty[t.id] ?? 0) * t.price, 0);
   const totalQty = Object.values(qty).reduce((a, b) => a + b, 0);
+
+  const ageBlocked = is18Plus && userId && (viewerAge === null || viewerAge < 18);
 
   function setQuantity(id: string, delta: number, max: number) {
     setQty((prev) => {
@@ -43,6 +51,14 @@ export default function BuyBox({
   function startCheckout() {
     if (!userId || !userEmail) {
       setError("Log in to buy tickets.");
+      return;
+    }
+    if (is18Plus && viewerAge === null) {
+      setError("This event is 18+. Add your date of birth in your profile before buying a ticket.");
+      return;
+    }
+    if (is18Plus && viewerAge! < 18) {
+      setError("This event is 18+. You must be 18 or older to attend.");
       return;
     }
     if (totalQty === 0) {
@@ -93,14 +109,44 @@ export default function BuyBox({
     handler.openIframe();
   }
 
+  if (eventCancelled) {
+    return (
+      <div className="bg-panel border border-hairline rounded-card p-5.5 h-fit">
+        <div className="text-[13px] text-coral font-medium">This event has been cancelled</div>
+        <p className="text-[12.5px] text-paperDim mt-2">
+          The organizer cancelled this event. If you already bought a ticket, contact them directly.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <>
       <Script src="https://js.paystack.co/v1/inline.js" strategy="lazyOnload" />
       <div className="bg-panel border border-hairline rounded-card p-5.5 h-fit">
+        {is18Plus && (
+          <div className="text-[12px] text-coral mb-3 flex items-center gap-1.5">
+            <span>🔞</span> This event is 18+ only
+          </div>
+        )}
+
+        {ageBlocked && (
+          <div className="text-[12.5px] text-coral bg-coral/10 border border-coral/30 rounded-lg p-3 mb-3">
+            {viewerAge === null ? (
+              <>
+                Add your date of birth in your{" "}
+                <Link href="/profile" className="underline">profile</Link> to buy a ticket to this 18+ event.
+              </>
+            ) : (
+              "You must be 18 or older to get a ticket to this event."
+            )}
+          </div>
+        )}
+
         {ticketTypes.length === 0 ? (
           <>
             <div className="text-[13px] text-paperDim mb-2">This is a free event</div>
-            <div className="text-sm mb-1">No ticket needed - just show up.</div>
+            <div className="text-sm mb-1">No ticket needed — just show up.</div>
             <div className="text-[12.5px] text-paperDim">Save it below so you don't forget.</div>
           </>
         ) : (
@@ -123,6 +169,7 @@ export default function BuyBox({
                       <button
                         className="w-6 h-6 rounded-full border border-hairline text-sm"
                         onClick={() => setQuantity(t.id, -1, left)}
+                        disabled={!!ageBlocked}
                       >
                         &minus;
                       </button>
@@ -130,6 +177,7 @@ export default function BuyBox({
                       <button
                         className="w-6 h-6 rounded-full border border-hairline text-sm"
                         onClick={() => setQuantity(t.id, 1, left)}
+                        disabled={!!ageBlocked}
                       >
                         +
                       </button>
@@ -150,7 +198,7 @@ export default function BuyBox({
                 <button
                   type="submit"
                   className="btn-primary w-full mt-4.5"
-                  disabled={paying}
+                  disabled={paying || !!ageBlocked}
                   onClick={startCheckout}
                 >
                   {paying ? "Opening Paystack..." : `Pay ₦${total.toLocaleString()} with Paystack`}

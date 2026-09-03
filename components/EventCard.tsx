@@ -28,10 +28,19 @@ export default function EventCard({
 
   return (
     <Link href={`/event/${event.id}`} className="card-float overflow-hidden block">
-      <div className={`h-[150px] p-3 flex items-end relative bg-gradient-to-br ${style.bg}`}>
-        <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${style.tag}`}>
+      <div
+        className={`h-[150px] p-3 flex items-end relative ${event.cover_image_url ? "bg-cover bg-center" : `bg-gradient-to-br ${style.bg}`}`}
+        style={event.cover_image_url ? { backgroundImage: `url(${event.cover_image_url})` } : undefined}
+      >
+        {event.cover_image_url && <div className="absolute inset-0 bg-black/35" />}
+        <span className={`relative text-[11px] font-semibold px-2.5 py-1 rounded-full ${style.tag}`}>
           {event.category}
         </span>
+        {event.is_18_plus && (
+          <span className="relative ml-1.5 text-[11px] font-semibold px-2 py-1 rounded-full bg-coral text-[#2A0C02]">
+            18+
+          </span>
+        )}
         <div className="absolute top-3 right-3 bg-ink border border-white/15 rounded-lg px-2.5 py-1.5 text-center leading-tight">
           <div className="font-display text-base font-bold">{day}</div>
           <div className="text-[10px] text-paperDim uppercase">{month}</div>

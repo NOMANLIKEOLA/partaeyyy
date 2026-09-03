@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import BuyBox from "@/components/BuyBox";
 import SaveButton from "@/components/SaveButton";
+import { calculateAge } from "@/lib/age";
 
 export default async function EventDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -17,14 +18,15 @@ export default async function EventDetailPage({ params }: { params: { id: string
   const { data: { user } } = await supabase.auth.getUser();
 
   let alreadySaved = false;
+  let viewerAge: number | null = null;
+
   if (user) {
-    const { data: savedRow } = await supabase
-      .from("saved_events")
-      .select("event_id")
-      .eq("user_id", user.id)
-      .eq("event_id", event.id)
-      .maybeSingle();
+    const [{ data: savedRow }, { data: viewerProfile }] = await Promise.all([
+      supabase.from("saved_events").select("event_id").eq("user_id", user.id).eq("event_id", event.id).maybeSingle(),
+      supabase.from("users").select("date_of_birth").eq("id", user.id).single()
+    ]);
     alreadySaved = !!savedRow;
+    viewerAge = calculateAge(viewerProfile?.date_of_birth ?? null);
   }
 
   const date = new Date(event.event_date);
@@ -33,13 +35,28 @@ export default async function EventDetailPage({ params }: { params: { id: string
   return (
     <>
       <div
-        className="h-[280px] rounded-card flex items-end p-7 mt-6"
-        style={{ background: "linear-gradient(160deg,#3B1250,#7A1E52)" }}
+        className={`h-[280px] rounded-card flex items-end p-7 mt-6 relative ${event.cover_image_url ? "bg-cover bg-center" : ""}`}
+        style={
+          event.cover_image_url
+            ? { backgroundImage: `url(${event.cover_image_url})` }
+            : { background: "linear-gradient(160deg,#3B1250,#7A1E52)" }
+        }
       >
-        <div>
-          <span className="text-xs px-3 py-1.5 rounded-full bg-[#3B1250] text-[#E4B8FF] font-semibold inline-block mb-2.5">
+        {event.cover_image_url && <div className="absolute inset-0 bg-black/40 rounded-card" />}
+        <div className="relative flex items-center gap-2">
+          <span className="text-xs px-3 py-1.5 rounded-full bg-[#3B1250] text-[#E4B8FF] font-semibold inline-block">
             {event.category}
           </span>
+          {event.is_18_plus && (
+            <span className="text-xs px-3 py-1.5 rounded-full bg-coral text-[#2A0C02] font-semibold inline-block">
+              18+
+            </span>
+          )}
+          {event.status === "cancelled" && (
+            <span className="text-xs px-3 py-1.5 rounded-full bg-panel border border-hairline text-paperDim font-semibold inline-block">
+              Cancelled
+            </span>
+          )}
         </div>
       </div>
 
@@ -72,6 +89,9 @@ export default async function EventDetailPage({ params }: { params: { id: string
             userId={user?.id ?? null}
             userEmail={user?.email ?? null}
             organizerSubaccountCode={event.users?.paystack_subaccount_code ?? null}
+            is18Plus={event.is_18_plus}
+            viewerAge={viewerAge}
+            eventCancelled={event.status === "cancelled"}
           />
           <SaveButton eventId={event.id} userId={user?.id ?? null} initiallySaved={alreadySaved} />
         </div>

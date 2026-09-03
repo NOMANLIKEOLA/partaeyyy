@@ -18,6 +18,7 @@ export interface PartaeyEvent {
   event_date: string;
   start_time: string | null;
   cover_image_url: string | null;
+  is_18_plus: boolean;
   status: "draft" | "published";
   created_at: string;
 }

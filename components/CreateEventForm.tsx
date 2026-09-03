@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import type { EventCategory } from "@/lib/types";
 import { NIGERIA_STATES } from "@/lib/nigeria";
+import type { EventCategory } from "@/lib/types";
 
 const CATEGORIES: EventCategory[] = [
   "Raves & nightlife",
@@ -30,11 +30,26 @@ export default function CreateEventForm({ userId }: { userId: string }) {
   const [city, setCity] = useState("");
   const [description, setDescription] = useState("");
   const [needsTickets, setNeedsTickets] = useState(true);
+  const [is18Plus, setIs18Plus] = useState(true);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [tiers, setTiers] = useState<TierDraft[]>([
     { name: "Regular", price: "", quantity: "" }
   ]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function handleCategoryChange(c: EventCategory) {
+    setCategory(c);
+    // Nightlife defaults to 18+, but organizers can override for any category.
+    if (c === "Raves & nightlife") setIs18Plus(true);
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null;
+    setCoverFile(file);
+    setCoverPreview(file ? URL.createObjectURL(file) : null);
+  }
 
   function updateTier(i: number, field: keyof TierDraft, value: string) {
     setTiers((prev) => prev.map((t, idx) => (idx === i ? { ...t, [field]: value } : t)));
@@ -49,7 +64,7 @@ export default function CreateEventForm({ userId }: { userId: string }) {
     setError(null);
 
     if (!title || !date || !city) {
-      setError("Title, date and city are required.");
+      setError("Title, date and state are required.");
       return;
     }
 
@@ -64,6 +79,24 @@ export default function CreateEventForm({ userId }: { userId: string }) {
 
     setSubmitting(true);
 
+    let coverImageUrl: string | null = null;
+    if (coverFile) {
+      const ext = coverFile.name.split(".").pop();
+      const path = `${userId}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("event-covers")
+        .upload(path, coverFile);
+
+      if (uploadError) {
+        setError(`Image upload failed: ${uploadError.message}`);
+        setSubmitting(false);
+        return;
+      }
+
+      const { data: publicUrlData } = supabase.storage.from("event-covers").getPublicUrl(path);
+      coverImageUrl = publicUrlData.publicUrl;
+    }
+
     const { data: event, error: eventError } = await supabase
       .from("events")
       .insert({
@@ -75,6 +108,8 @@ export default function CreateEventForm({ userId }: { userId: string }) {
         venue,
         event_date: date,
         start_time: time || null,
+        cover_image_url: coverImageUrl,
+        is_18_plus: is18Plus,
         status: "published"
       })
       .select()
@@ -115,7 +150,7 @@ export default function CreateEventForm({ userId }: { userId: string }) {
           className="field-input"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. Neon Lagoon - Amapiano All Night"
+          placeholder="e.g. Neon Lagoon — Amapiano All Night"
         />
       </div>
 
@@ -126,7 +161,7 @@ export default function CreateEventForm({ userId }: { userId: string }) {
             <button
               type="button"
               key={c}
-              onClick={() => setCategory(c)}
+              onClick={() => handleCategoryChange(c)}
               className={`chip ${category === c ? "on" : ""}`}
             >
               {c}
@@ -152,13 +187,13 @@ export default function CreateEventForm({ userId }: { userId: string }) {
       </div>
 
       <div>
-            <label className="block text-[13px] text-paperDim mb-2">State</label>
-            <select className="field-input" value={city} onChange={(e) => setCity(e.target.value)}>
-              <option value="">Select a state</option>
-              {NIGERIA_STATES.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
+        <label className="block text-[13px] text-paperDim mb-2">State</label>
+        <select className="field-input" value={city} onChange={(e) => setCity(e.target.value)}>
+          <option value="">Select a state</option>
+          {NIGERIA_STATES.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
       </div>
 
       <div>
@@ -171,22 +206,44 @@ export default function CreateEventForm({ userId }: { userId: string }) {
         />
       </div>
 
+      <div>
+        <label className="block text-[13px] text-paperDim mb-2">Cover image</label>
+        <label className="dropzone-label block border border-dashed border-hairline rounded-xl p-6 text-center text-paperDim text-[13px] cursor-pointer hover:border-amber transition">
+          <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+          {coverPreview ? (
+            <img src={coverPreview} alt="Cover preview" className="max-h-[160px] mx-auto rounded-lg" />
+          ) : (
+            "Click to upload an image · 1200×630 recommended"
+          )}
+        </label>
+      </div>
+
       <div className="flex items-center justify-between bg-panel border border-hairline rounded-[10px] px-3.5 py-3">
-
         <div>
-            <div className="text-sm font-medium">This event needs tickets</div>
-            <div className="text-[12px] text-paperDim mt-0.5">Turn off for free, no-ticket events (RSVP only)</div>
+          <div className="text-sm font-medium">This event needs tickets</div>
+          <div className="text-[12px] text-paperDim mt-0.5">Turn off for free, no-ticket events (RSVP only)</div>
         </div>
-
         <button
-              type="button"
-              onClick={() => setNeedsTickets((v) => !v)}
-              className={`w-11 h-6 rounded-full relative transition ${needsTickets ? "bg-amber" : "bg-hairline"}`}
-            >
-              <span
-                className={`absolute top-0.5 w-5 h-5 rounded-full bg-ink transition-all ${needsTickets ? "left-[22px]" : "left-0.5"}`}
-              />
-            </button>
+          type="button"
+          onClick={() => setNeedsTickets((v) => !v)}
+          className={`w-11 h-6 rounded-full relative transition ${needsTickets ? "bg-amber" : "bg-hairline"}`}
+        >
+          <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-ink transition-all ${needsTickets ? "left-[22px]" : "left-0.5"}`} />
+        </button>
+      </div>
+
+      <div className="flex items-center justify-between bg-panel border border-hairline rounded-[10px] px-3.5 py-3">
+        <div>
+          <div className="text-sm font-medium">18+ only</div>
+          <div className="text-[12px] text-paperDim mt-0.5">Attendees under 18 won't be able to get tickets</div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIs18Plus((v) => !v)}
+          className={`w-11 h-6 rounded-full relative transition ${is18Plus ? "bg-amber" : "bg-hairline"}`}
+        >
+          <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-ink transition-all ${is18Plus ? "left-[22px]" : "left-0.5"}`} />
+        </button>
       </div>
 
       {needsTickets && (

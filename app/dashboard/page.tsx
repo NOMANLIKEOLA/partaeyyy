@@ -32,16 +32,18 @@ export default async function DashboardPage() {
   ]);
 
   const bucketMap = new Map<string, any>();
-  for (const row of [...(savedUpcoming ?? []), ...(orderedUpcoming ?? [])]) {
-    bucketMap.set(row.events.id, row.events);
-  }
-  const bucketEvents = Array.from(bucketMap.values());
+      for (const row of [...(savedUpcoming ?? []), ...(orderedUpcoming ?? [])] as any[]) {
+        const ev = Array.isArray(row.events) ? row.events[0] : row.events;
+        bucketMap.set(ev.id, ev);
+      }
+      const bucketEvents = Array.from(bucketMap.values());
 
-  const attendedMap = new Map<string, any>();
-  for (const row of orderedPast ?? []) {
-    attendedMap.set(row.events.id, row.events);
-  }
-  const attendedCount = attendedMap.size;
+      const attendedMap = new Map<string, any>();
+      for (const row of (orderedPast ?? []) as any[]) {
+        const ev = Array.isArray(row.events) ? row.events[0] : row.events;
+        attendedMap.set(ev.id, ev);
+      }
+      const attendedCount = attendedMap.size;
 
   return (
     <>

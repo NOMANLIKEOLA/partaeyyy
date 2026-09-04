@@ -31,11 +31,13 @@ export default async function HomePage({
   searchParams: { category?: string; city?: string; q?: string };
 }) {
   const supabase = createClient();
+  const today = new Date().toISOString().slice(0, 10);
 
   let query = supabase
     .from("events")
     .select("*, ticket_types(price)")
     .eq("status", "published")
+    .gte("event_date", today)
     .order("event_date", { ascending: true });
 
   if (searchParams.category && searchParams.category !== "All") {

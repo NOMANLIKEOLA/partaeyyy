@@ -19,9 +19,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Suspense fallback={<div className="h-[73px] border-b border-hairline" />}>
           <Nav initialUserEmail={user?.email ?? null} />
         </Suspense>
-        <main className="max-w-[1140px] mx-auto px-10">{children}</main>
-        <footer className="border-t border-hairline mt-16 px-10 py-8 text-paperDim text-xs flex justify-between">
-          <div>PARTAEY - like you.</div>
+        <main className="max-w-[1140px] mx-auto px-4 sm:px-6 md:px-10">{children}</main>
+        <footer className="border-t border-hairline mt-16 px-4 sm:px-6 md:px-10 py-8 text-paperDim text-xs flex flex-col sm:flex-row gap-2 sm:gap-0 sm:justify-between">
+          <div>PARTAEY — like you.</div>
           <div>&copy; {new Date().getFullYear()} Partaey</div>
         </footer>
       </body>

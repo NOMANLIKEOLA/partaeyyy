@@ -16,7 +16,7 @@ export default async function MyEventsPage() {
 
   return (
     <div className="py-11 pb-16">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8">
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight">My events</h1>
           <p className="text-paperDim text-sm mt-2">Everything you've listed on Partaey.</p>
@@ -35,7 +35,7 @@ export default async function MyEventsPage() {
             const revenue = event.ticket_types.reduce((sum: number, t: any) => sum + t.quantity_sold * t.price, 0);
 
             return (
-              <div key={event.id} className="bg-panel border border-hairline rounded-card p-5 flex items-center justify-between gap-6">
+              <div key={event.id} className="bg-panel border border-hairline rounded-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-6">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1.5">
                     <Link href={`/event/${event.id}`} className="font-medium hover:text-amber transition">

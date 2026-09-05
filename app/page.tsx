@@ -59,7 +59,7 @@ export default async function HomePage({
   return (
     <>
       <section className="py-14 border-b border-hairline">
-        <h1 className="font-display text-5xl font-bold leading-[1.05] tracking-tight max-w-[680px]">
+        <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold leading-[1.1] tracking-tight max-w-[680px]">
           Every event, <span className="text-amber">everywhere</span> in Nigeria.
         </h1>
         <p className="text-paperDim mt-3.5 max-w-[480px]">
@@ -67,30 +67,30 @@ export default async function HomePage({
           own event for your city to see.
         </p>
 
-        <form action="/" className="mt-7 flex bg-panel border border-hairline rounded-full p-1.5 max-w-[640px]">
-          <input
-            name="q"
-            defaultValue={searchParams.q ?? ""}
-            type="text"
-            placeholder="Search events, artists, venues..."
-            className="flex-1 bg-transparent border-none outline-none px-4.5 py-3 text-sm"
-          />
-          <select
-            name="city"
-            defaultValue={searchParams.city ?? ""}
-            className="bg-transparent border-none outline-none px-3 text-sm text-paperDim border-l border-hairline"
-          >
-            <option value="">All states</option>
-            {NIGERIA_STATES.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-          {searchParams.category && searchParams.category !== "All" && (
-            <input type="hidden" name="category" value={searchParams.category} />
-          )}
-          <button className="bg-coral text-[#2A0C02] px-5.5 rounded-full font-semibold text-sm">
-            Search
-          </button>
+       <form action="/" className="mt-7 flex flex-col sm:flex-row gap-2 sm:gap-0 sm:bg-panel sm:border sm:border-hairline sm:rounded-full sm:p-1.5 max-w-[640px]">
+            <input
+              name="q"
+              defaultValue={searchParams.q ?? ""}
+              type="text"
+              placeholder="Search events, artists, venues..."
+              className="flex-1 bg-panel sm:bg-transparent border border-hairline sm:border-none rounded-full sm:rounded-none outline-none px-4 py-3 text-sm"
+            />
+            <select
+              name="city"
+              defaultValue={searchParams.city ?? ""}
+              className="bg-panel sm:bg-transparent border border-hairline sm:border-none sm:border-l rounded-full sm:rounded-none outline-none px-4 sm:px-3 py-3 sm:py-0 text-sm text-paperDim"
+            >
+              <option value="">All states</option>
+              {NIGERIA_STATES.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+            {searchParams.category && searchParams.category !== "All" && (
+              <input type="hidden" name="category" value={searchParams.category} />
+            )}
+            <button className="bg-coral text-[#2A0C02] px-5.5 py-3 sm:py-0 rounded-full font-semibold text-sm">
+              Search
+            </button>
         </form>
 
         <div className="flex gap-2.5 flex-wrap mt-6">
@@ -134,7 +134,7 @@ export default async function HomePage({
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           {events.map((event: PartaeyEvent & { ticket_types: { price: number }[] }) => {
             const prices = event.ticket_types?.map((t) => t.price) ?? [];
             const lowest = prices.length ? Math.min(...prices) : null;
@@ -143,7 +143,7 @@ export default async function HomePage({
         </div>
       )}
 
-      <div className="my-14 bg-panel2 border border-dashed border-hairline rounded-card p-7 flex items-center justify-between gap-5">
+      <div className="my-10 sm:my-14 bg-panel2 border border-dashed border-hairline rounded-card p-5 sm:p-7 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-5">
         <div>
           <h3 className="text-lg font-semibold mb-1.5">Running an event? List it on Partaey.</h3>
           <p className="text-paperDim text-[13.5px]">

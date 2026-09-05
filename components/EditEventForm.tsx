@@ -121,7 +121,7 @@ export default function EditEventForm({ event }: { event: any }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-[13px] text-paperDim mb-2">Date</label>
           <input type="date" className="field-input" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -181,7 +181,7 @@ export default function EditEventForm({ event }: { event: any }) {
         <div>
           <label className="block text-[13px] text-paperDim mb-2">Ticket tiers</label>
           {tiers.map((t: any, i: number) => (
-            <div key={t.id} className="grid grid-cols-[1.3fr_1fr_1fr] gap-2.5 mb-2.5 items-center">
+            <div className="grid grid-cols-1 sm:grid-cols-[1.3fr_1fr_1fr] gap-2 sm:gap-2.5 mb-2.5 items center">
               <div className="text-sm">{t.name}</div>
               <input className="field-input" type="number" min="0" value={t.price} onChange={(e) => updateTier(i, "price", e.target.value)} />
               <input className="field-input" type="number" min={t.quantity_sold} value={t.quantity} onChange={(e) => updateTier(i, "quantity", e.target.value)} />

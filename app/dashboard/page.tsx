@@ -52,7 +52,7 @@ export default async function DashboardPage() {
         <p className="text-paperDim text-sm mt-2">Here's what's happening with your account.</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-5 my-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 my-8">
         <div className="card-float p-6.5">
           <div className="text-[13px] text-paperDim mb-4">Event bucket list</div>
           <div className="font-display text-[36px] font-bold">{bucketEvents.length}</div>
@@ -80,7 +80,7 @@ export default async function DashboardPage() {
           <Link href="/" className="text-amber underline">discover</Link> and save an event, or buy a ticket.
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-5 mb-14">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mb-14">
           {bucketEvents.map((event: any) => {
             const prices = event.ticket_types?.map((t: any) => t.price) ?? [];
             const lowest = prices.length ? Math.min(...prices) : null;

@@ -170,7 +170,7 @@ export default function CreateEventForm({ userId }: { userId: string }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-[13px] text-paperDim mb-2">Date</label>
           <input type="date" className="field-input" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -250,7 +250,7 @@ export default function CreateEventForm({ userId }: { userId: string }) {
         <div>
           <label className="block text-[13px] text-paperDim mb-2">Ticket tiers</label>
           {tiers.map((t, i) => (
-            <div key={i} className="grid grid-cols-[1.3fr_1fr_1fr] gap-2.5 mb-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-[1.3fr_1fr_1fr] gap-2 sm:gap-2.5 mb-2.5">
               <input
                 className="field-input"
                 placeholder="Tier name (e.g. VIP)"

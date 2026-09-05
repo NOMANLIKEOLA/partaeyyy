@@ -35,7 +35,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
   return (
     <>
       <div
-        className={`h-[280px] rounded-card flex items-end p-7 mt-6 relative ${event.cover_image_url ? "bg-cover bg-center" : ""}`}
+        className={`h-[180px] sm:h-[220px] md:h-[280px] rounded-card flex items-end p-4 sm:p-7 mt-4 sm:mt-6 relative ${event.cover_image_url ? "bg-cover bg-center" : ""}`}
         style={
           event.cover_image_url
             ? { backgroundImage: `url(${event.cover_image_url})` }
@@ -60,9 +60,9 @@ export default async function EventDetailPage({ params }: { params: { id: string
         </div>
       </div>
 
-      <div className="grid grid-cols-[1fr_340px] gap-10 mt-8">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 lg:gap-10 mt-8">
         <div>
-          <h1 className="font-display text-[32px] font-bold mb-3.5 tracking-tight">{event.title}</h1>
+          <h1 className="font-display text-2xl sm:text-[28px] md:text-[32px] font-bold mb-3.5 tracking-tight">{event.title}</h1>
           <div className="flex gap-5 text-paperDim text-sm mb-6 flex-wrap">
             <div>{dateLabel}{event.start_time ? ` · ${event.start_time}` : ""}</div>
             <div>{event.venue ? `${event.venue}, ` : ""}{event.city}</div>

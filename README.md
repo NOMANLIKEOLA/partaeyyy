@@ -7,7 +7,8 @@
 Partaey lets event organizers self-serve create and manage events, and lets attendees discover, book, and pay for tickets securely — across every category: raves, concerts, comedy shows, conferences, festivals, sports, meetups, and more.
 
 ## Live Version: 
-click the link => https://partaeyyylikeu.vercel.app/
+click the link => https://partaeyyylikeu.vercel.app/  
+Note: the events currently listed are from friends i sent the link to for testing.
 
 ## Features
 

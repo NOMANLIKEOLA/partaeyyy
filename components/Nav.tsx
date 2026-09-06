@@ -9,7 +9,9 @@ import { NIGERIA_STATES } from "@/lib/nigeria";
 export default function Nav({ initialUserEmail }: { initialUserEmail: string | null }) {
   const [openMenu, setOpenMenu] = useState<"state" | "user" | null>(null);
   const [userEmail, setUserEmail] = useState(initialUserEmail);
+  const [stateSearch, setStateSearch] = useState("");
   const wrapRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -17,6 +19,9 @@ export default function Nav({ initialUserEmail }: { initialUserEmail: string | n
 
   const activeCity = searchParams.get("city");
   const stateLabel = activeCity ?? "All states";
+  const filteredStates = NIGERIA_STATES.filter((s) =>
+    s.toLowerCase().includes(stateSearch.trim().toLowerCase())
+  );
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -27,6 +32,14 @@ export default function Nav({ initialUserEmail }: { initialUserEmail: string | n
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (openMenu === "state") {
+      setStateSearch("");
+      // slight delay so the input exists before focusing
+      setTimeout(() => searchInputRef.current?.focus(), 0);
+    }
+  }, [openMenu]);
 
   function selectState(name: string | null) {
     const params = new URLSearchParams(pathname === "/" ? searchParams.toString() : "");
@@ -65,26 +78,48 @@ export default function Nav({ initialUserEmail }: { initialUserEmail: string | n
             <span className="truncate">{stateLabel}</span> <span className="text-[9px] shrink-0">&#9662;</span>
           </button>
           {openMenu === "state" && (
-            <div className="fixed sm:absolute left-2 right-2 sm:left-0 sm:right-auto top-[64px] sm:top-[calc(100%+10px)] bg-panel border border-hairline rounded-xl p-2 sm:min-w-[220px] max-h-[360px] overflow-y-auto shadow-2xl z-50">
-              <div className="text-[11px] text-paperDim uppercase tracking-wide px-2.5 pt-1.5 pb-1 sticky top-0 bg-panel">
+            <div className="fixed sm:absolute left-2 right-2 sm:left-0 sm:right-auto top-[64px] sm:top-[calc(100%+10px)] bg-panel border border-hairline rounded-xl p-2 sm:min-w-[220px] max-h-[380px] flex flex-col shadow-2xl z-50">
+              <div className="text-[11px] text-paperDim uppercase tracking-wide px-2.5 pt-1.5 pb-1">
                 Choose your state
               </div>
-              <button
-                className={`block w-full text-left px-2.5 py-2 rounded-lg text-[13.5px] hover:bg-panel2 ${!activeCity ? "text-amber font-medium" : ""}`}
-                onClick={() => selectState(null)}
-              >
-                All states — nationwide
-              </button>
-              <div className="h-px bg-hairline my-1 mx-1" />
-              {NIGERIA_STATES.map((s) => (
-                <button
-                  key={s}
-                  className={`block w-full text-left px-2.5 py-2 rounded-lg text-[13.5px] hover:bg-panel2 ${activeCity === s ? "text-amber font-medium" : ""}`}
-                  onClick={() => selectState(s)}
-                >
-                  {s}
-                </button>
-              ))}
+
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={stateSearch}
+                onChange={(e) => setStateSearch(e.target.value)}
+                placeholder="Search states..."
+                className="mx-1 mb-1.5 px-2.5 py-2 rounded-lg bg-panel2 border border-hairline text-[13px] outline-none focus:border-amber"
+                onClick={(e) => e.stopPropagation()}
+              />
+
+              <div className="overflow-y-auto">
+                {!stateSearch && (
+                  <>
+                    <button
+                      className={`block w-full text-left px-2.5 py-2 rounded-lg text-[13.5px] hover:bg-panel2 ${!activeCity ? "text-amber font-medium" : ""}`}
+                      onClick={() => selectState(null)}
+                    >
+                      All states — nationwide
+                    </button>
+                    <div className="h-px bg-hairline my-1 mx-1" />
+                  </>
+                )}
+
+                {filteredStates.length === 0 ? (
+                  <div className="px-2.5 py-3 text-[13px] text-paperDim">No states match "{stateSearch}"</div>
+                ) : (
+                  filteredStates.map((s) => (
+                    <button
+                      key={s}
+                      className={`block w-full text-left px-2.5 py-2 rounded-lg text-[13.5px] hover:bg-panel2 ${activeCity === s ? "text-amber font-medium" : ""}`}
+                      onClick={() => selectState(s)}
+                    >
+                      {s}
+                    </button>
+                  ))
+                )}
+              </div>
             </div>
           )}
         </div>

@@ -1,36 +1,99 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Partaey
 
-## Getting Started
+**"like you"** — a Nigeria-first events discovery and ticketing platform, built to serve all 36 states plus the FCT. Think Eventbrite, but designed around how Nigerians actually find and share events — nationwide, not Lagos-only.
 
-First, run the development server:
+## What it does
+
+Partaey lets event organizers self-serve create and manage events, and lets attendees discover, book, and pay for tickets securely — across every category: raves, concerts, comedy shows, conferences, festivals, sports, meetups, and more.
+
+## Live Version: 
+click the link => https://partaeyyylikeu.vercel.app/  
+Note: the events currently listed are from friends i sent the link to for testing.
+
+## Features
+
+- **Auth** — Email/password authentication via Supabase Auth, with a database trigger syncing `auth.users` → `public.users`
+- **Event creation** — Category chips, full list of Nigerian states, ticket tiers, free/RSVP toggle, 18+ age-gating, cover image upload to Supabase Storage
+- **Payments** — Paystack inline checkout with server-side payment verification before any order is written
+- **Organizer payouts** — Paystack subaccount splits with a configurable platform fee
+- **Dashboard** — Bucket list and attended-event counts with date-based logic
+- **Profile** — Editable user profiles
+- **My Events** — Organizer view with sales stats, edit, and cancel
+- **Edit Event** — Update event details post-creation
+- **Payout Account setup** — Organizer bank/payout configuration
+- **Event photo gallery** — Per-event image galleries
+- **Contact Us** page
+- **Discover** — Browse upcoming events only, filtered server-side
+- **Mobile-responsive** — Tailwind breakpoints (`sm:`, `md:`, `lg:`) across all major pages
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js 14.2.15, React 18.3.1 |
+| Styling | Tailwind CSS v3.4.4 |
+| Backend / Auth / DB | Supabase (Auth, Postgres, Storage) |
+| Payments | Paystack (inline checkout, subaccounts, webhooks) |
+| Hosting | Vercel |
+
+## Getting started
+
+### Prerequisites
+
+- Node.js
+- A Supabase project (Auth, Postgres, Storage enabled)
+- A Paystack account (test or live keys)
+
+### Installation
+
+```bash
+git clone https://github.com/NOMANLIKEOLA/partaeyyy.git
+cd partaeyyy
+npm install
+```
+
+> ⚠️ This project pins exact dependency versions (no `^` prefixes) in `package.json`. Avoid running `npm update` or regenerating `package.json` from `create-next-app` defaults — the Next.js 14 stack is sensitive to version drift.
+
+### Environment variables
+
+Create a `.env.local` file with:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=
+PAYSTACK_SECRET_KEY=
+PARTAEY_PLATFORM_FEE_PERCENT=
+```
+
+> ⚠️ `SUPABASE_SERVICE_ROLE_KEY` must **never** be prefixed with `NEXT_PUBLIC_` — doing so exposes it to the client bundle.
+
+### Run locally
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Project structure notes
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `lib/nigeria.ts` — single source of truth for all Nigerian state names
+- `lib/types.ts` — shared TypeScript interfaces
+- `middleware.ts` — handles Supabase cookie/session refresh in Server Components
+- `next.config.js` — kept as `.js`, not `.ts`, due to a resolution conflict between Next.js 14 and 16 tooling
+- `postcss.config.mjs`, `tailwind.config.ts` — explicit config files, not framework-generated defaults
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Known build gotchas
 
-## Learn More
+- Supabase joined queries (one-to-many vs. many-to-one) may need explicit type casting to avoid TypeScript build failures on Vercel, even when local dev builds pass.
+- Supabase Storage buckets must be set to **public** for uploaded images to render.
+- Missing rows in `public.users` after signup are handled via a backfill + DB trigger — if you see 409 conflicts, check that the trigger is installed.
 
-To learn more about Next.js, take a look at the following resources:
+## Roadmap
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Planned fraud-prevention features (not yet implemented):
+- Delayed payouts / holdback period
+- Report button on events
+- Phone verification
+- Manual review queue
+- BVN verification

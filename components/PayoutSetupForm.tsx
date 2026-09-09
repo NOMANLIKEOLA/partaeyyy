@@ -5,7 +5,13 @@ import { useRouter } from "next/navigation";
 
 type Bank = { name: string; code: string };
 
-export default function PayoutSetupForm({ alreadyConnected }: { alreadyConnected: boolean }) {
+export default function PayoutSetupForm({
+  alreadyConnected,
+  accountName
+}: {
+  alreadyConnected: boolean;
+  accountName?: string | null;
+}) {
   const router = useRouter();
   const [banks, setBanks] = useState<Bank[]>([]);
   const [businessName, setBusinessName] = useState("");
@@ -14,7 +20,7 @@ export default function PayoutSetupForm({ alreadyConnected }: { alreadyConnected
   const [loading, setLoading] = useState(false);
   const [loadingBanks, setLoadingBanks] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/paystack/banks")
@@ -31,10 +37,17 @@ export default function PayoutSetupForm({ alreadyConnected }: { alreadyConnected
     setError(null);
     setLoading(true);
 
-    const res = await fetch("/api/paystack/create-subaccount", {
+    const selectedBank = banks.find((b) => b.code === bankCode);
+
+    const res = await fetch("/api/paystack/create-recipient", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ businessName, bankCode, accountNumber })
+      body: JSON.stringify({
+        businessName,
+        bankCode,
+        bankName: selectedBank?.name ?? "",
+        accountNumber
+      })
     });
 
     const data = await res.json();
@@ -45,16 +58,18 @@ export default function PayoutSetupForm({ alreadyConnected }: { alreadyConnected
       return;
     }
 
-    setSuccess(true);
+    setSuccess(data.accountName);
     router.refresh();
   }
 
-  if (alreadyConnected && !success) {
+  if ((alreadyConnected && !success)) {
     return (
       <div className="bg-panel border border-hairline rounded-card p-6">
-        <div className="text-sm text-teal font-medium mb-1">✓ Payouts are connected</div>
+        <div className="text-sm text-teal font-medium mb-1">✓ Payout account connected</div>
+        {accountName && <p className="text-paperDim text-[13.5px] mb-2">{accountName}</p>}
         <p className="text-paperDim text-[13.5px]">
-          Ticket sales for your events settle directly to your bank account via Paystack.
+          Ticket money is held by Partaey until a few days after your event, then paid out to this account
+          automatically.
         </p>
       </div>
     );
@@ -63,9 +78,9 @@ export default function PayoutSetupForm({ alreadyConnected }: { alreadyConnected
   if (success) {
     return (
       <div className="bg-panel border border-hairline rounded-card p-6">
-        <div className="text-sm text-teal font-medium mb-1">✓ Payout account connected</div>
+        <div className="text-sm text-teal font-medium mb-1">✓ Account connected — {success}</div>
         <p className="text-paperDim text-[13.5px]">
-          Future ticket sales on your events will settle straight to this account.
+          Ticket money is held by Partaey until a few days after your event, then paid out here automatically.
         </p>
       </div>
     );
@@ -73,6 +88,11 @@ export default function PayoutSetupForm({ alreadyConnected }: { alreadyConnected
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="bg-panel2 border border-dashed border-hairline rounded-card p-4 text-[13px] text-paperDim">
+        Ticket money isn't paid out instantly. Partaey holds it until a few days after your event happens, then
+        transfers your share here automatically. This protects buyers from fake listings.
+      </div>
+
       <div>
         <label className="block text-[13px] text-paperDim mb-2">Business / organizer name</label>
         <input
@@ -109,11 +129,6 @@ export default function PayoutSetupForm({ alreadyConnected }: { alreadyConnected
       <button type="submit" disabled={loading} className="btn-primary w-full">
         {loading ? "Connecting..." : "Connect payout account"}
       </button>
-
-      <p className="text-[12px] text-paperDim">
-        Ticket money from your events will pay out to this account automatically. Partaey keeps a small
-        percentage on each sale; the rest settles to you.
-      </p>
     </form>
   );
 }

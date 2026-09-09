@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import BuyBox from "@/components/BuyBox";
 import SaveButton from "@/components/SaveButton";
+import ReportEventButton from "@/components/ReportEventButton";
+import EventPhotoGallery from "@/components/EventPhotoGallery"; 
 import { calculateAge } from "@/lib/age";
 
 export default async function EventDetailPage({ params }: { params: { id: string } }) {
@@ -9,7 +11,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
 
   const { data: event } = await supabase
     .from("events")
-    .select("*, ticket_types(*), users:organizer_id(full_name, paystack_subaccount_code)")
+    .select("*, ticket_types(*), users:organizer_id(full_name)")
     .eq("id", params.id)
     .single();
 
@@ -19,6 +21,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
 
   let alreadySaved = false;
   let viewerAge: number | null = null;
+  let canUploadPhotos = false;
 
   if (user) {
     const [{ data: savedRow }, { data: viewerProfile }] = await Promise.all([
@@ -27,7 +30,25 @@ export default async function EventDetailPage({ params }: { params: { id: string
     ]);
     alreadySaved = !!savedRow;
     viewerAge = calculateAge(viewerProfile?.date_of_birth ?? null);
+
+    canUploadPhotos = event.organizer_id === user.id;
+    if (!canUploadPhotos) {
+      const { data: orderRow } = await supabase
+        .from("orders")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("event_id", event.id)
+        .eq("status", "paid")
+        .maybeSingle();
+      canUploadPhotos = !!orderRow;
+    }
   }
+
+  const { data: photos } = await supabase
+    .from("event_photos")
+    .select("id, photo_url")
+    .eq("event_id", event.id)
+    .order("created_at", { ascending: false });
 
   const date = new Date(event.event_date);
   const dateLabel = date.toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short" });
@@ -62,7 +83,9 @@ export default async function EventDetailPage({ params }: { params: { id: string
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 lg:gap-10 mt-8">
         <div>
-          <h1 className="font-display text-2xl sm:text-[28px] md:text-[32px] font-bold mb-3.5 tracking-tight">{event.title}</h1>
+          <h1 className="font-display text-2xl sm:text-[28px] md:text-[32px] font-bold mb-3.5 tracking-tight">
+            {event.title}
+          </h1>
           <div className="flex gap-5 text-paperDim text-sm mb-6 flex-wrap">
             <div>{dateLabel}{event.start_time ? ` · ${event.start_time}` : ""}</div>
             <div>{event.venue ? `${event.venue}, ` : ""}{event.city}</div>
@@ -88,14 +111,23 @@ export default async function EventDetailPage({ params }: { params: { id: string
             ticketTypes={event.ticket_types}
             userId={user?.id ?? null}
             userEmail={user?.email ?? null}
-            organizerSubaccountCode={event.users?.paystack_subaccount_code ?? null}
             is18Plus={event.is_18_plus}
             viewerAge={viewerAge}
             eventCancelled={event.status === "cancelled"}
           />
           <SaveButton eventId={event.id} userId={user?.id ?? null} initiallySaved={alreadySaved} />
+          <ReportEventButton eventId={event.id} userId={user?.id ?? null} />
         </div>
       </div>
+
+
+      <EventPhotoGallery
+        eventId={event.id}
+        photos={photos ?? []}
+        canUpload={canUploadPhotos}
+        userId={user?.id ?? null}
+        
+      />
     </>
   );
 }

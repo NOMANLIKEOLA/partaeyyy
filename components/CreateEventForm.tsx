@@ -18,7 +18,7 @@ const CATEGORIES: EventCategory[] = [
 
 type TierDraft = { name: string; price: string; quantity: string };
 
-export default function CreateEventForm({ userId }: { userId: string }) {
+export default function CreateEventForm({ userId, hasPhone }: { userId: string; hasPhone: boolean }) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -38,10 +38,10 @@ export default function CreateEventForm({ userId }: { userId: string }) {
   ]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingReviewNotice, setPendingReviewNotice] = useState(false);
 
   function handleCategoryChange(c: EventCategory) {
     setCategory(c);
-    // Nightlife defaults to 18+, but organizers can override for any category.
     if (c === "Raves & nightlife") setIs18Plus(true);
   }
 
@@ -77,15 +77,18 @@ export default function CreateEventForm({ userId }: { userId: string }) {
       }
     }
 
+    if (needsTickets && !hasPhone) {
+      setError("Add a phone number to your profile before listing paid events.");
+      return;
+    }
+
     setSubmitting(true);
 
     let coverImageUrl: string | null = null;
     if (coverFile) {
       const ext = coverFile.name.split(".").pop();
       const path = `${userId}/${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from("event-covers")
-        .upload(path, coverFile);
+      const { error: uploadError } = await supabase.storage.from("event-covers").upload(path, coverFile);
 
       if (uploadError) {
         setError(`Image upload failed: ${uploadError.message}`);
@@ -95,6 +98,18 @@ export default function CreateEventForm({ userId }: { userId: string }) {
 
       const { data: publicUrlData } = supabase.storage.from("event-covers").getPublicUrl(path);
       coverImageUrl = publicUrlData.publicUrl;
+    }
+
+    // A first-time organizer's first PAID event goes to manual review
+    // before it's publicly visible.
+    const hasPaidTier = needsTickets && tiers.some((t) => Number(t.price) > 0);
+    let needsReview = false;
+    if (hasPaidTier) {
+      const { count: priorEventCount } = await supabase
+        .from("events")
+        .select("id", { count: "exact", head: true })
+        .eq("organizer_id", userId);
+      needsReview = (priorEventCount ?? 0) === 0;
     }
 
     const { data: event, error: eventError } = await supabase
@@ -110,7 +125,8 @@ export default function CreateEventForm({ userId }: { userId: string }) {
         start_time: time || null,
         cover_image_url: coverImageUrl,
         is_18_plus: is18Plus,
-        status: "published"
+        pending_review: needsReview,
+        status: needsReview ? "draft" : "published"
       })
       .select()
       .single();
@@ -139,6 +155,12 @@ export default function CreateEventForm({ userId }: { userId: string }) {
     }
 
     setSubmitting(false);
+
+    if (needsReview) {
+      setPendingReviewNotice(true);
+      return;
+    }
+
     router.push(`/event/${event.id}`);
   }
 
@@ -208,7 +230,7 @@ export default function CreateEventForm({ userId }: { userId: string }) {
 
       <div>
         <label className="block text-[13px] text-paperDim mb-2">Cover image</label>
-        <label className="dropzone-label block border border-dashed border-hairline rounded-xl p-6 text-center text-paperDim text-[13px] cursor-pointer hover:border-amber transition">
+        <label className="block border border-dashed border-hairline rounded-xl p-6 text-center text-paperDim text-[13px] cursor-pointer hover:border-amber transition">
           <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
           {coverPreview ? (
             <img src={coverPreview} alt="Cover preview" className="max-h-[160px] mx-auto rounded-lg" />
@@ -250,7 +272,7 @@ export default function CreateEventForm({ userId }: { userId: string }) {
         <div>
           <label className="block text-[13px] text-paperDim mb-2">Ticket tiers</label>
           {tiers.map((t, i) => (
-            <div className="grid grid-cols-1 sm:grid-cols-[1.3fr_1fr_1fr] gap-2 sm:gap-2.5 mb-2.5">
+            <div key={i} className="grid grid-cols-1 sm:grid-cols-[1.3fr_1fr_1fr] gap-2 sm:gap-2.5 mb-2.5">
               <input
                 className="field-input"
                 placeholder="Tier name (e.g. VIP)"
@@ -283,9 +305,19 @@ export default function CreateEventForm({ userId }: { userId: string }) {
 
       {error && <div className="text-[13px] text-coral">{error}</div>}
 
-      <button type="submit" disabled={submitting} className="btn-primary w-full">
-        {submitting ? "Publishing..." : "Publish event"}
-      </button>
+      {pendingReviewNotice ? (
+        <div className="bg-panel2 border border-hairline rounded-card p-5 text-center">
+          <div className="text-teal font-medium mb-1.5">Event submitted for review</div>
+          <p className="text-paperDim text-[13px]">
+            Since this is your first paid event, we're giving it a quick look before it goes live — usually
+            within 24 hours. You'll find it under "My events" once approved.
+          </p>
+        </div>
+      ) : (
+        <button type="submit" disabled={submitting} className="btn-primary w-full">
+          {submitting ? "Publishing..." : "Publish event"}
+        </button>
+      )}
     </form>
   );
 }

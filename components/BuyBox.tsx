@@ -17,7 +17,6 @@ export default function BuyBox({
   ticketTypes,
   userId,
   userEmail,
-  organizerSubaccountCode,
   is18Plus,
   viewerAge,
   eventCancelled
@@ -27,7 +26,6 @@ export default function BuyBox({
   ticketTypes: TicketType[];
   userId: string | null;
   userEmail: string | null;
-  organizerSubaccountCode: string | null;
   is18Plus: boolean;
   viewerAge: number | null;
   eventCancelled: boolean;
@@ -77,7 +75,9 @@ export default function BuyBox({
       email: userEmail,
       amount: Math.round(total * 100),
       currency: "NGN",
-      ...(organizerSubaccountCode ? { subaccount: organizerSubaccountCode } : {}),
+      // No subaccount split anymore — payment goes fully to the platform
+      // balance and is released to the organizer later (see /api/payouts/release),
+      // after a holdback window and reserve period.
       metadata: {
         event_id: eventId,
         ticket_type_id: chosen.id,

@@ -37,12 +37,15 @@ export default async function MyEventsPage() {
             return (
               <div key={event.id} className="bg-panel border border-hairline rounded-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-6">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1.5">
+                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                     <Link href={`/event/${event.id}`} className="font-medium hover:text-amber transition">
                       {event.title}
                     </Link>
                     {event.status === "cancelled" && (
                       <span className="text-[11px] px-2 py-0.5 rounded-full bg-coral/20 text-coral">Cancelled</span>
+                    )}
+                    {event.pending_review && (
+                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber/20 text-amber">Pending review</span>
                     )}
                     {event.is_18_plus && (
                       <span className="text-[11px] px-2 py-0.5 rounded-full bg-panel2 text-paperDim">18+</span>

@@ -9,6 +9,14 @@ export default async function DashboardPage() {
 
   if (!user) redirect("/login");
 
+  const { data: profile } = await supabase
+    .from("users")
+    .select("full_name")
+    .eq("id", user.id)
+    .single();
+
+  const firstName = profile?.full_name?.split(" ")[0];
+
   const today = new Date().toISOString().slice(0, 10);
 
   const [{ data: savedUpcoming }, { data: orderedUpcoming }, { data: orderedPast }] = await Promise.all([
@@ -32,23 +40,25 @@ export default async function DashboardPage() {
   ]);
 
   const bucketMap = new Map<string, any>();
-      for (const row of [...(savedUpcoming ?? []), ...(orderedUpcoming ?? [])] as any[]) {
-        const ev = Array.isArray(row.events) ? row.events[0] : row.events;
-        bucketMap.set(ev.id, ev);
-      }
-      const bucketEvents = Array.from(bucketMap.values());
+  for (const row of [...(savedUpcoming ?? []), ...(orderedUpcoming ?? [])] as any[]) {
+    const ev = Array.isArray(row.events) ? row.events[0] : row.events;
+    bucketMap.set(ev.id, ev);
+  }
+  const bucketEvents = Array.from(bucketMap.values());
 
-      const attendedMap = new Map<string, any>();
-      for (const row of (orderedPast ?? []) as any[]) {
-        const ev = Array.isArray(row.events) ? row.events[0] : row.events;
-        attendedMap.set(ev.id, ev);
-      }
-      const attendedCount = attendedMap.size;
+  const attendedMap = new Map<string, any>();
+  for (const row of (orderedPast ?? []) as any[]) {
+    const ev = Array.isArray(row.events) ? row.events[0] : row.events;
+    attendedMap.set(ev.id, ev);
+  }
+  const attendedCount = attendedMap.size;
 
   return (
     <>
       <div className="pt-11 pb-1.5">
-        <h1 className="font-display text-3xl font-bold tracking-tight">Welcome back</h1>
+        <h1 className="font-display text-3xl font-bold tracking-tight">
+          Welcome back{firstName ? `, ${firstName}` : ""}
+        </h1>
         <p className="text-paperDim text-sm mt-2">Here's what's happening with your account.</p>
       </div>
 

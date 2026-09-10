@@ -18,7 +18,15 @@ const CATEGORIES: EventCategory[] = [
 
 type TierDraft = { name: string; price: string; quantity: string };
 
-export default function CreateEventForm({ userId, hasPhone }: { userId: string; hasPhone: boolean }) {
+export default function CreateEventForm({
+  userId,
+  hasPhone,
+  hasName
+}: {
+  userId: string;
+  hasPhone: boolean;
+  hasName: boolean;
+}) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -62,6 +70,11 @@ export default function CreateEventForm({ userId, hasPhone }: { userId: string; 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    if (!hasName) {
+      setError("Add your name to your profile before listing an event.");
+      return;
+    }
 
     if (!title || !date || !city) {
       setError("Title, date and state are required.");

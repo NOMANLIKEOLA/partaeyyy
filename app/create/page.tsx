@@ -10,7 +10,7 @@ export default async function CreateEventPage() {
 
   const { data: profile } = await supabase
     .from("users")
-    .select("phone, paystack_recipient_code")
+    .select("full_name, phone, paystack_recipient_code")
     .eq("id", user.id)
     .single();
 
@@ -20,6 +20,14 @@ export default async function CreateEventPage() {
       <p className="text-paperDim text-sm mb-6">
         Fill in the details below. It goes live on Partaey as soon as you publish.
       </p>
+
+      {!profile?.full_name && (
+        <div className="bg-panel2 border border-dashed border-hairline rounded-card p-4 mb-4 text-[13px]">
+          <span className="text-amber font-medium">Add your name</span> to your{" "}
+          <Link href="/profile" className="text-amber underline">profile</Link> — it's shown as the organizer on
+          every event you list.
+        </div>
+      )}
 
       {!profile?.phone && (
         <div className="bg-panel2 border border-dashed border-hairline rounded-card p-4 mb-4 text-[13px]">
@@ -37,7 +45,7 @@ export default async function CreateEventPage() {
         </div>
       )}
 
-      <CreateEventForm userId={user.id} hasPhone={!!profile?.phone} />
+      <CreateEventForm userId={user.id} hasPhone={!!profile?.phone} hasName={!!profile?.full_name} />
     </div>
   );
 }

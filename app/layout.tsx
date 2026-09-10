@@ -12,12 +12,13 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const isAdmin = !!user && user.email === process.env.ADMIN_EMAIL;
 
   return (
     <html lang="en">
       <body className="font-sans pb-16">
         <Suspense fallback={<div className="h-[73px] border-b border-hairline" />}>
-          <Nav initialUserEmail={user?.email ?? null} />
+          <Nav initialUserEmail={user?.email ?? null} isAdmin={isAdmin} />
         </Suspense>
         <main className="max-w-[1140px] mx-auto px-4 sm:px-6 md:px-10">{children}</main>
         <footer className="border-t border-hairline mt-16 px-4 sm:px-6 md:px-10 py-8 text-paperDim text-xs flex flex-col sm:flex-row gap-2 sm:gap-0 sm:justify-between">

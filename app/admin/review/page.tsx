@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import AdminReviewActions from "@/components/AdminReviewActions";
 
 export default async function AdminReviewPage() {
@@ -10,7 +10,8 @@ export default async function AdminReviewPage() {
     redirect("/");
   }
 
-  const { data: events } = await supabase
+  const admin = createServiceClient();
+  const { data: events } = await admin
     .from("events")
     .select("*, ticket_types(name, price, quantity), users:organizer_id(full_name, phone)")
     .eq("pending_review", true)

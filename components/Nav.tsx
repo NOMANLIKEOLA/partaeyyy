@@ -6,7 +6,13 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { NIGERIA_STATES } from "@/lib/nigeria";
 
-export default function Nav({ initialUserEmail }: { initialUserEmail: string | null }) {
+export default function Nav({
+  initialUserEmail,
+  isAdmin
+}: {
+  initialUserEmail: string | null;
+  isAdmin: boolean;
+}) {
   const [openMenu, setOpenMenu] = useState<"state" | "user" | null>(null);
   const [userEmail, setUserEmail] = useState(initialUserEmail);
   const [stateSearch, setStateSearch] = useState("");
@@ -36,7 +42,6 @@ export default function Nav({ initialUserEmail }: { initialUserEmail: string | n
   useEffect(() => {
     if (openMenu === "state") {
       setStateSearch("");
-      // slight delay so the input exists before focusing
       setTimeout(() => searchInputRef.current?.focus(), 0);
     }
   }, [openMenu]);
@@ -150,6 +155,12 @@ export default function Nav({ initialUserEmail }: { initialUserEmail: string | n
                   <Link href="/payouts" className="block px-2.5 py-2 rounded-lg text-[13.5px] hover:bg-panel2" onClick={() => setOpenMenu(null)}>Payout account</Link>
                   <Link href="/profile" className="block px-2.5 py-2 rounded-lg text-[13.5px] hover:bg-panel2" onClick={() => setOpenMenu(null)}>Profile</Link>
                   <Link href="/contact" className="block px-2.5 py-2 rounded-lg text-[13.5px] hover:bg-panel2" onClick={() => setOpenMenu(null)}>Contact us</Link>
+                  {isAdmin && (
+                    <>
+                      <div className="h-px bg-hairline my-1.5 mx-1" />
+                      <Link href="/admin" className="block px-2.5 py-2 rounded-lg text-[13.5px] text-amber hover:bg-panel2" onClick={() => setOpenMenu(null)}>Admin dashboard</Link>
+                    </>
+                  )}
                   <div className="h-px bg-hairline my-1.5 mx-1" />
                   <button className="block w-full text-left px-2.5 py-2 rounded-lg text-[13.5px] hover:bg-panel2" onClick={handleSignOut}>Log out</button>
                 </>

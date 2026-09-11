@@ -90,7 +90,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
             <div>{dateLabel}{event.start_time ? ` · ${event.start_time}` : ""}</div>
             <div>{event.venue ? `${event.venue}, ` : ""}{event.city}</div>
           </div>
-          <p className="text-[#D8D3C6] text-[14.5px] leading-[1.75] max-w-[600px] whitespace-pre-line">
+          <p className="text-paperDim text-[14.5px] leading-[1.75] max-w-[600px] whitespace-pre-line">
             {event.description}
           </p>
           <div className="flex items-center gap-3 mt-7 pt-6 border-t border-hairline">

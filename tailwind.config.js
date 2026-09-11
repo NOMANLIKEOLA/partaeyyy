@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: "class",
   content: [
     "./app/**/*.{js,ts,jsx,tsx}",
     "./components/**/*.{js,ts,jsx,tsx}"
@@ -7,15 +8,15 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        ink: "#0D0B14",
-        panel: "#17141F",
-        panel2: "#201C2B",
-        hairline: "#2E293A",
-        paper: "#F3EFE6",
-        paperDim: "#B8B3A6",
-        amber: "#FFC93C",
-        coral: "#FF6B4A",
-        teal: "#39C3A6"
+        ink: "rgb(var(--color-ink) / <alpha-value>)",
+        panel: "rgb(var(--color-panel) / <alpha-value>)",
+        panel2: "rgb(var(--color-panel2) / <alpha-value>)",
+        hairline: "rgb(var(--color-hairline) / <alpha-value>)",
+        paper: "rgb(var(--color-paper) / <alpha-value>)",
+        paperDim: "rgb(var(--color-paperDim) / <alpha-value>)",
+        amber: "rgb(var(--color-amber) / <alpha-value>)",
+        coral: "rgb(var(--color-coral) / <alpha-value>)",
+        teal: "rgb(var(--color-teal) / <alpha-value>)"
       },
       fontFamily: {
         display: ["Space Grotesk", "sans-serif"],

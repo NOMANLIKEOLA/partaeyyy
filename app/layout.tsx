@@ -16,6 +16,20 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                var theme = localStorage.getItem('partaey-theme');
+                if (theme === 'light') {
+                  document.documentElement.classList.add('light');
+                }
+              } catch (e) {}
+            `
+          }}
+        />
+      </head>
       <body className="font-sans pb-16">
         <Suspense fallback={<div className="h-[73px] border-b border-hairline" />}>
           <Nav initialUserEmail={user?.email ?? null} isAdmin={isAdmin} />

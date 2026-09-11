@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { NIGERIA_STATES } from "@/lib/nigeria";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Nav({
   initialUserEmail,
@@ -128,6 +129,8 @@ export default function Nav({
             </div>
           )}
         </div>
+
+        <ThemeToggle />
 
         <div className="relative">
           <button

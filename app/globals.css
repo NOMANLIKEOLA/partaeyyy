@@ -4,9 +4,37 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Dark theme (default) — values are R G B triplets so Tailwind's
+     opacity modifiers (e.g. bg-ink/90) keep working. */
+  --color-ink: 13 11 20;
+  --color-panel: 23 20 31;
+  --color-panel2: 32 28 43;
+  --color-hairline: 46 41 58;
+  --color-paper: 243 239 230;
+  --color-paperDim: 184 179 166;
+  --color-amber: 255 201 60;
+  --color-coral: 255 107 74;
+  --color-teal: 57 195 166;
+}
+
+html.light {
+  /* Light theme — beige base, sun-yellow accent */
+  --color-ink: 246 239 221;
+  --color-panel: 239 230 204;
+  --color-panel2: 232 220 187;
+  --color-hairline: 216 200 154;
+  --color-paper: 43 36 16;
+  --color-paperDim: 124 107 68;
+  --color-amber: 255 199 44;
+  --color-coral: 225 80 47;
+  --color-teal: 14 122 99;
+}
+
 body {
-  background-color: #0d0b14;
-  color: #f3efe6;
+  background-color: rgb(var(--color-ink));
+  color: rgb(var(--color-paper));
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 @layer components {
@@ -26,6 +54,6 @@ body {
     @apply w-full bg-panel border border-hairline text-paper rounded-[10px] px-3.5 py-3 text-sm outline-none focus:border-amber transition;
   }
   .card-float {
-    @apply bg-panel border border-hairline rounded-card transition hover:-translate-y-1.5 hover:shadow-[0_18px_32px_rgba(0,0,0,0.4)] hover:border-amber;
+    @apply bg-panel border border-hairline rounded-card transition hover:-translate-y-1.5 hover:shadow-[0_18px_32px_rgba(0,0,0,0.25)] hover:border-amber;
   }
 }

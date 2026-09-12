@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import BuyBox from "@/components/BuyBox";
 import SaveButton from "@/components/SaveButton";
 import ReportEventButton from "@/components/ReportEventButton";
-import EventPhotoGallery from "@/components/EventPhotoGallery"; 
+import EventPhotoGallery from "@/components/EventPhotoGallery";
 import { calculateAge } from "@/lib/age";
 
 export default async function EventDetailPage({ params }: { params: { id: string } }) {
@@ -120,13 +120,11 @@ export default async function EventDetailPage({ params }: { params: { id: string
         </div>
       </div>
 
-
       <EventPhotoGallery
         eventId={event.id}
         photos={photos ?? []}
         canUpload={canUploadPhotos}
         userId={user?.id ?? null}
-        
       />
     </>
   );

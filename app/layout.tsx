@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+// @ts-expect-error - Next.js handles global CSS imports without a dedicated type declaration.
 import "./globals.css";
 import Nav from "@/components/Nav";
 import { createClient } from "@/lib/supabase/server";

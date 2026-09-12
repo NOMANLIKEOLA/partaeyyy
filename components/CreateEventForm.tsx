@@ -41,6 +41,8 @@ export default function CreateEventForm({
   const [is18Plus, setIs18Plus] = useState(true);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+  const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
   const [tiers, setTiers] = useState<TierDraft[]>([
     { name: "Regular", price: "", quantity: "" }
   ]);
@@ -53,10 +55,23 @@ export default function CreateEventForm({
     if (c === "Raves & nightlife") setIs18Plus(true);
   }
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] ?? null;
     setCoverFile(file);
     setCoverPreview(file ? URL.createObjectURL(file) : null);
+  }
+
+  function handleGalleryChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+    setGalleryFiles((prev) => [...prev, ...files]);
+    setGalleryPreviews((prev) => [...prev, ...files.map((f) => URL.createObjectURL(f))]);
+    e.target.value = "";
+  }
+
+  function removeGalleryPhoto(index: number) {
+    setGalleryFiles((prev) => prev.filter((_, i) => i !== index));
+    setGalleryPreviews((prev) => prev.filter((_, i) => i !== index));
   }
 
   function updateTier(i: number, field: keyof TierDraft, value: string) {
@@ -104,7 +119,7 @@ export default function CreateEventForm({
       const { error: uploadError } = await supabase.storage.from("event-covers").upload(path, coverFile);
 
       if (uploadError) {
-        setError(`Image upload failed: ${uploadError.message}`);
+        setError(`Cover image upload failed: ${uploadError.message}`);
         setSubmitting(false);
         return;
       }
@@ -165,6 +180,20 @@ export default function CreateEventForm({
         setError(tiersError.message);
         return;
       }
+    }
+
+    // Upload any extra gallery photos now that we have the event's ID.
+    for (const file of galleryFiles) {
+      const ext = file.name.split(".").pop();
+      const path = `${event.id}/${userId}-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: photoUploadError } = await supabase.storage.from("event-photos").upload(path, file);
+      if (photoUploadError) continue; // don't block publishing over a gallery photo failing
+      const { data: publicUrlData } = supabase.storage.from("event-photos").getPublicUrl(path);
+      await supabase.from("event_photos").insert({
+        event_id: event.id,
+        uploaded_by: userId,
+        photo_url: publicUrlData.publicUrl
+      });
     }
 
     setSubmitting(false);
@@ -243,13 +272,44 @@ export default function CreateEventForm({
 
       <div>
         <label className="block text-[13px] text-paperDim mb-2">Cover image</label>
+        <p className="text-[12px] text-paperDim mb-2">This is the big banner shown at the top of your event page.</p>
         <label className="block border border-dashed border-hairline rounded-xl p-6 text-center text-paperDim text-[13px] cursor-pointer hover:border-amber transition">
-          <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+          <input type="file" accept="image/*" className="hidden" onChange={handleCoverChange} />
           {coverPreview ? (
             <img src={coverPreview} alt="Cover preview" className="max-h-[160px] mx-auto rounded-lg" />
           ) : (
             "Click to upload an image · 1200×630 recommended"
           )}
+        </label>
+      </div>
+
+      <div>
+        <label className="block text-[13px] text-paperDim mb-2">Event photos</label>
+        <p className="text-[12px] text-paperDim mb-2">
+          Extra photos — venue shots, lineup flyer, past editions. Shown in the gallery on your event page.
+        </p>
+
+        {galleryPreviews.length > 0 && (
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3">
+            {galleryPreviews.map((src, i) => (
+              <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-panel">
+                <img src={src} alt="" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => removeGalleryPhoto(i)}
+                  className="absolute top-1 right-1 w-5 h-5 rounded-full bg-ink/80 text-paper text-[11px] flex items-center justify-center"
+                  aria-label="Remove photo"
+                >
+                  &times;
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <label className="block border border-dashed border-hairline rounded-xl p-5 text-center text-paperDim text-[13px] cursor-pointer hover:border-amber transition">
+          <input type="file" accept="image/*" multiple className="hidden" onChange={handleGalleryChange} />
+          + Add photos
         </label>
       </div>
 

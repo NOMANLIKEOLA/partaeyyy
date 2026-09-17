@@ -30,6 +30,16 @@ export default function Nav({
     s.toLowerCase().includes(stateSearch.trim().toLowerCase())
   );
 
+  // Nav's local userEmail state only ever picks up initialUserEmail on
+  // first mount. When login/logout triggers router.refresh(), the layout
+  // re-fetches the user and passes a new initialUserEmail prop down —
+  // this effect is what actually syncs that change into local state.
+  // Without it, the dropdown stays stuck on whatever it showed at first
+  // page load until a hard refresh remounts the component.
+  useEffect(() => {
+    setUserEmail(initialUserEmail);
+  }, [initialUserEmail]);
+
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {

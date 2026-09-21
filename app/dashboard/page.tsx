@@ -19,7 +19,13 @@ export default async function DashboardPage() {
 
   const today = new Date().toISOString().slice(0, 10);
 
-  const [{ data: savedUpcoming }, { data: orderedUpcoming }, { data: orderedPast }] = await Promise.all([
+  const [
+    { data: savedUpcoming },
+    { data: orderedUpcoming },
+    { data: orderedPast },
+    { count: ticketCount },
+    { count: myEventsCount }
+  ] = await Promise.all([
     supabase
       .from("saved_events")
       .select("events!inner(*, ticket_types(price))")
@@ -36,7 +42,9 @@ export default async function DashboardPage() {
       .select("events!inner(*, ticket_types(price))")
       .eq("user_id", user.id)
       .eq("status", "paid")
-      .lt("events.event_date", today)
+      .lt("events.event_date", today),
+    supabase.from("tickets").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+    supabase.from("events").select("id", { count: "exact", head: true }).eq("organizer_id", user.id)
   ]);
 
   const bucketMap = new Map<string, any>();
@@ -77,6 +85,23 @@ export default async function DashboardPage() {
           <div className="text-[13px] text-paperDim mb-4">Input new event</div>
           <div className="font-display text-[36px] font-bold text-amber">+</div>
           <div className="text-[12.5px] text-paperDim mt-2">create and list an event</div>
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mb-8">
+        <Link href="/tickets" className="card-float p-6.5 flex items-center justify-between">
+          <div>
+            <div className="text-[13px] text-paperDim mb-1.5">My tickets</div>
+            <div className="text-sm">{ticketCount ?? 0} ticket{(ticketCount ?? 0) === 1 ? "" : "s"} · tap to view QR codes</div>
+          </div>
+          <span className="text-amber text-xl">&rarr;</span>
+        </Link>
+        <Link href="/my-events" className="card-float p-6.5 flex items-center justify-between">
+          <div>
+            <div className="text-[13px] text-paperDim mb-1.5">My events</div>
+            <div className="text-sm">{myEventsCount ?? 0} listed · manage, check in, view sales</div>
+          </div>
+          <span className="text-amber text-xl">&rarr;</span>
         </Link>
       </div>
 

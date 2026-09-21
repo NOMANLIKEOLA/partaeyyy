@@ -30,12 +30,6 @@ export default function Nav({
     s.toLowerCase().includes(stateSearch.trim().toLowerCase())
   );
 
-  // Nav's local userEmail state only ever picks up initialUserEmail on
-  // first mount. When login/logout triggers router.refresh(), the layout
-  // re-fetches the user and passes a new initialUserEmail prop down —
-  // this effect is what actually syncs that change into local state.
-  // Without it, the dropdown stays stuck on whatever it showed at first
-  // page load until a hard refresh remounts the component.
   useEffect(() => {
     setUserEmail(initialUserEmail);
   }, [initialUserEmail]);
@@ -164,8 +158,6 @@ export default function Nav({
               ) : (
                 <>
                   <Link href="/dashboard" className="block px-2.5 py-2 rounded-lg text-[13.5px] hover:bg-panel2" onClick={() => setOpenMenu(null)}>Dashboard</Link>
-                  <Link href="/my-events" className="block px-2.5 py-2 rounded-lg text-[13.5px] hover:bg-panel2" onClick={() => setOpenMenu(null)}>My events</Link>
-                  <Link href="/tickets" className="block px-2.5 py-2 rounded-lg text-[13.5px] hover:bg-panel2" onClick={() => setOpenMenu(null)}>My tickets</Link>
                   <Link href="/payouts" className="block px-2.5 py-2 rounded-lg text-[13.5px] hover:bg-panel2" onClick={() => setOpenMenu(null)}>Payout account</Link>
                   <Link href="/profile" className="block px-2.5 py-2 rounded-lg text-[13.5px] hover:bg-panel2" onClick={() => setOpenMenu(null)}>Profile</Link>
                   <Link href="/contact" className="block px-2.5 py-2 rounded-lg text-[13.5px] hover:bg-panel2" onClick={() => setOpenMenu(null)}>Contact us</Link>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { generateTicketCode } from "@/lib/tickets";
 
 export async function POST(req: NextRequest) {
   const { reference, eventId, ticketTypeId, quantity, amount } = await req.json();
@@ -34,24 +35,39 @@ export async function POST(req: NextRequest) {
 
   const admin = createServiceClient();
 
-  const { error: orderError } = await admin.from("orders").insert({
-    user_id: user.id,
+  const { data: order, error: orderError } = await admin
+    .from("orders")
+    .insert({
+      user_id: user.id,
+      event_id: eventId,
+      ticket_type_id: ticketTypeId,
+      quantity,
+      amount,
+      platform_fee: platformFee,
+      organizer_amount: organizerAmount,
+      reserve_amount: reserveAmount,
+      release_amount: releaseAmount,
+      payout_status: "held",
+      paystack_reference: reference,
+      status: "paid"
+    })
+    .select()
+    .single();
+
+  if (orderError || !order) {
+    return NextResponse.json({ error: orderError?.message ?? "Order failed" }, { status: 500 });
+  }
+
+  // One row per physical ticket — this is what makes each ticket
+  // individually scannable/revocable, rather than the order as a whole.
+  const ticketRows = Array.from({ length: quantity }, () => ({
+    order_id: order.id,
     event_id: eventId,
     ticket_type_id: ticketTypeId,
-    quantity,
-    amount,
-    platform_fee: platformFee,
-    organizer_amount: organizerAmount,
-    reserve_amount: reserveAmount,
-    release_amount: releaseAmount,
-    payout_status: "held",
-    paystack_reference: reference,
-    status: "paid"
-  });
-
-  if (orderError) {
-    return NextResponse.json({ error: orderError.message }, { status: 500 });
-  }
+    user_id: user.id,
+    code: generateTicketCode()
+  }));
+  await admin.from("tickets").insert(ticketRows);
 
   const { data: tier } = await admin
     .from("ticket_types")

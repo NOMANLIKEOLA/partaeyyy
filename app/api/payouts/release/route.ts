@@ -27,6 +27,7 @@ export async function GET(req: NextRequest) {
   const admin = createServiceClient();
   const holdbackDays = Number(process.env.PARTAEY_HOLDBACK_DAYS ?? "3");
   const reserveDays = Number(process.env.PARTAEY_RESERVE_DAYS ?? "14");
+  const minCheckinRate = Number(process.env.PARTAEY_MIN_CHECKIN_RATE ?? "20");
 
   const mainCutoff = new Date();
   mainCutoff.setDate(mainCutoff.getDate() - holdbackDays);
@@ -37,34 +38,62 @@ export async function GET(req: NextRequest) {
   const reserveCutoffStr = reserveCutoff.toISOString().slice(0, 10);
 
   const errors: string[] = [];
+  const flagged: string[] = [];
   let mainReleased = 0;
   let reserveReleased = 0;
 
-  // ---------- Stage 1: main release ----------
+  // ---------- Stage 1: main release, gated by check-in rate per event ----------
   const { data: heldOrders } = await admin
     .from("orders")
-    .select("id, release_amount, events!inner(event_date, status, organizer_id)")
+    .select("id, release_amount, event_id, events!inner(event_date, status, organizer_id)")
     .eq("status", "paid")
     .eq("payout_status", "held")
     .lte("events.event_date", mainCutoffStr)
     .neq("events.status", "cancelled");
 
   if (heldOrders && heldOrders.length > 0) {
-    const byOrganizer = new Map<string, { orderIds: string[]; total: number }>();
+    const byEvent = new Map<string, { orderIds: string[]; total: number; organizerId: string }>();
     for (const o of heldOrders as any[]) {
-      const organizerId = o.events.organizer_id;
-      const entry = byOrganizer.get(organizerId) ?? { orderIds: [], total: 0 };
+      const entry: { orderIds: string[]; total: number; organizerId: string } =
+        byEvent.get(o.event_id) ?? { orderIds: [], total: 0, organizerId: o.events.organizer_id };
       entry.orderIds.push(o.id);
       entry.total += Number(o.release_amount ?? 0);
-      byOrganizer.set(organizerId, entry);
+      byEvent.set(o.event_id, entry);
+    }
+
+    const byOrganizer = new Map<string, { orderIds: string[]; total: number }>();
+
+    for (const [eventId, eventEntry] of byEvent) {
+      const { count: totalTickets } = await admin
+        .from("tickets").select("id", { count: "exact", head: true }).eq("event_id", eventId);
+      const { count: checkedIn } = await admin
+        .from("tickets").select("id", { count: "exact", head: true }).eq("event_id", eventId).eq("status", "used");
+
+      const rate = totalTickets && totalTickets > 0 ? ((checkedIn ?? 0) / totalTickets) * 100 : null;
+
+      if (rate !== null && rate < minCheckinRate) {
+        // Low turnout on a paid event — hold for manual review instead of
+        // auto-releasing. A heuristic, not proof, so it goes to a human.
+        await admin
+          .from("events")
+          .update({
+            payout_flagged: true,
+            payout_flag_reason: `Only ${rate.toFixed(0)}% checked in (${checkedIn ?? 0} of ${totalTickets})`
+          })
+          .eq("id", eventId);
+        flagged.push(`Event ${eventId}: ${rate.toFixed(0)}% check-in — held for review.`);
+        continue;
+      }
+
+      const orgEntry = byOrganizer.get(eventEntry.organizerId) ?? { orderIds: [], total: 0 };
+      orgEntry.orderIds.push(...eventEntry.orderIds);
+      orgEntry.total += eventEntry.total;
+      byOrganizer.set(eventEntry.organizerId, orgEntry);
     }
 
     for (const [organizerId, entry] of byOrganizer) {
       const { data: organizer } = await admin
-        .from("users")
-        .select("paystack_recipient_code, full_name")
-        .eq("id", organizerId)
-        .single();
+        .from("users").select("paystack_recipient_code, full_name").eq("id", organizerId).single();
 
       if (!organizer?.paystack_recipient_code || entry.total <= 0) {
         errors.push(`Main release: ${organizer?.full_name ?? organizerId} has no payout account — ${entry.orderIds.length} order(s) left held.`);
@@ -86,7 +115,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // ---------- Stage 2: reserve release ----------
+  // ---------- Stage 2: reserve release (unchanged) ----------
   const { data: reserveOrders } = await admin
     .from("orders")
     .select("id, reserve_amount, events!inner(event_date, status, organizer_id)")
@@ -99,7 +128,8 @@ export async function GET(req: NextRequest) {
     const byOrganizer = new Map<string, { orderIds: string[]; total: number }>();
     for (const o of reserveOrders as any[]) {
       const organizerId = o.events.organizer_id;
-      const entry = byOrganizer.get(organizerId) ?? { orderIds: [], total: 0 };
+      const entry: { orderIds: string[]; total: number } =
+        byOrganizer.get(organizerId) ?? { orderIds: [], total: 0 };
       entry.orderIds.push(o.id);
       entry.total += Number(o.reserve_amount ?? 0);
       byOrganizer.set(organizerId, entry);
@@ -107,13 +137,10 @@ export async function GET(req: NextRequest) {
 
     for (const [organizerId, entry] of byOrganizer) {
       const { data: organizer } = await admin
-        .from("users")
-        .select("paystack_recipient_code, full_name")
-        .eq("id", organizerId)
-        .single();
+        .from("users").select("paystack_recipient_code, full_name").eq("id", organizerId).single();
 
       if (!organizer?.paystack_recipient_code || entry.total <= 0) {
-        errors.push(`Reserve release: ${organizer?.full_name ?? organizerId} has no payout account — ${entry.orderIds.length} order(s) stuck at main_released.`);
+        errors.push(`Reserve release: ${organizer?.full_name ?? organizerId} has no payout account — ${entry.orderIds.length} order(s) stuck.`);
         continue;
       }
 
@@ -132,5 +159,5 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ mainReleased, reserveReleased, errors });
+  return NextResponse.json({ mainReleased, reserveReleased, flagged, errors });
 }

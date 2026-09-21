@@ -17,6 +17,7 @@ export default async function AdminDashboardPage() {
     { count: totalOrders },
     { data: paidOrders },
     { count: openReports },
+    { count: flaggedPayouts },
     { data: recentEvents },
     { data: recentOrders }
   ] = await Promise.all([
@@ -27,6 +28,7 @@ export default async function AdminDashboardPage() {
     admin.from("orders").select("id", { count: "exact", head: true }).eq("status", "paid"),
     admin.from("orders").select("amount, platform_fee, organizer_amount, payout_status").eq("status", "paid"),
     admin.from("event_reports").select("id", { count: "exact", head: true }).eq("status", "open"),
+    admin.from("events").select("id", { count: "exact", head: true }).eq("payout_flagged", true),
     admin
       .from("events")
       .select("id, title, city, category, status, pending_review, created_at, users:organizer_id(full_name)")
@@ -52,7 +54,7 @@ export default async function AdminDashboardPage() {
           <h1 className="font-display text-3xl font-bold tracking-tight">Admin dashboard</h1>
           <p className="text-paperDim text-sm mt-2">Day-to-day overview of Partaey.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Link href="/admin/review" className="btn-ghost relative">
             Review queue
             {(pendingReview ?? 0) > 0 && (
@@ -66,6 +68,14 @@ export default async function AdminDashboardPage() {
             {(openReports ?? 0) > 0 && (
               <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-coral text-[#2A0C02] text-[11px] font-semibold">
                 {openReports}
+              </span>
+            )}
+          </Link>
+          <Link href="/admin/payouts" className="btn-ghost relative">
+            Flagged payouts
+            {(flaggedPayouts ?? 0) > 0 && (
+              <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-coral text-[#2A0C02] text-[11px] font-semibold">
+                {flaggedPayouts}
               </span>
             )}
           </Link>

@@ -64,6 +64,7 @@ export default async function MyEventsPage() {
 
                 <div className="flex items-center gap-2">
                   <Link href={`/my-events/${event.id}/edit`} className="btn-ghost">Edit</Link>
+                  <Link href={`/my-events/${event.id}/checkin`} className="btn-ghost">Check-in</Link>
                   {event.status !== "cancelled" && (
                     <CancelEventButton eventId={event.id} />
                   )}

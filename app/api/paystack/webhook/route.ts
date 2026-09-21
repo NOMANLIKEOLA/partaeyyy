@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { createServiceClient } from "@/lib/supabase/server";
+import { generateTicketCode } from "@/lib/tickets";
 
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
@@ -57,21 +58,43 @@ export async function POST(req: NextRequest) {
     const organizerAmount = Math.round((amount - platformFee) * 100) / 100;
     const reserveAmount = Math.round(organizerAmount * reservePercent) / 100;
     const releaseAmount = Math.round((organizerAmount - reserveAmount) * 100) / 100;
+    const qty = Number(quantity) || 1;
 
-    await admin.from("orders").insert({
-      user_id: matchedUser.id,
+    const { data: order, error: orderError } = await admin
+      .from("orders")
+      .insert({
+        user_id: matchedUser.id,
+        event_id,
+        ticket_type_id,
+        quantity: qty,
+        amount,
+        platform_fee: platformFee,
+        organizer_amount: organizerAmount,
+        reserve_amount: reserveAmount,
+        release_amount: releaseAmount,
+        payout_status: "held",
+        paystack_reference: reference,
+        status: "paid"
+      })
+      .select()
+      .single();
+
+    if (orderError || !order) {
+      return NextResponse.json({ received: true });
+    }
+
+    // Same as the browser-side verify route: one scannable ticket row
+    // per unit purchased. This is the path that fires if the buyer
+    // closed the tab before the browser-side verify call could — so
+    // it needs its own ticket creation, not a shared code path.
+    const ticketRows = Array.from({ length: qty }, () => ({
+      order_id: order.id,
       event_id,
       ticket_type_id,
-      quantity: Number(quantity) || 1,
-      amount,
-      platform_fee: platformFee,
-      organizer_amount: organizerAmount,
-      reserve_amount: reserveAmount,
-      release_amount: releaseAmount,
-      payout_status: "held",
-      paystack_reference: reference,
-      status: "paid"
-    });
+      user_id: matchedUser.id,
+      code: generateTicketCode()
+    }));
+    await admin.from("tickets").insert(ticketRows);
 
     const { data: tier } = await admin
       .from("ticket_types")
@@ -81,7 +104,7 @@ export async function POST(req: NextRequest) {
 
     await admin
       .from("ticket_types")
-      .update({ quantity_sold: (tier?.quantity_sold ?? 0) + (Number(quantity) || 1) })
+      .update({ quantity_sold: (tier?.quantity_sold ?? 0) + qty })
       .eq("id", ticket_type_id);
   }
 

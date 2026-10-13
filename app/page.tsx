@@ -2,7 +2,6 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import EventCard from "@/components/EventCard";
 import ScrollReveal from "@/components/ScrollReveal";
-import PartyTicker from "@/components/PartyTicker";
 import { NIGERIA_STATES } from "@/lib/nigeria";
 import type { PartaeyEvent } from "@/lib/types";
 
@@ -53,28 +52,21 @@ export default async function HomePage({
   }
 
   const { data: events } = await query;
-  const { count: liveEventCount } = await supabase
-    .from("events")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "published")
-    .gte("event_date", today);
 
   const heading = searchParams.city ? `Events in ${searchParams.city}` : "Trending across Nigeria";
 
   return (
     <>
-      <PartyTicker liveCount={liveEventCount ?? 0} />
-
-      <section className="py-10 sm:py-14 border-b border-hairline">
-        <h1 className="hero-title font-display font-bold tracking-tight max-w-[680px]">
+      <section className="py-10 sm:py-14 lg:py-16 border-b border-hairline">
+        <h1 className="hero-title font-display font-bold tracking-tight max-w-[820px]">
           Every event, <span className="party-gradient">everywhere</span> in Nigeria.
         </h1>
-        <p className="text-paperDim mt-3.5 max-w-[480px] text-[14.5px] sm:text-base">
+        <p className="text-paperDim mt-4 max-w-[560px] text-[14.5px] sm:text-base">
           Raves, concerts, comedy, conferences, festivals. Find what's happening in your state, or list your
           own event for your city to see.
         </p>
 
-        <form action="/" className="search-form mt-7 flex flex-col sm:flex-row gap-2.5 max-w-[680px]">
+        <form action="/" className="search-form mt-8 flex flex-col sm:flex-row gap-2.5 max-w-[820px]">
           <input
             name="q"
             defaultValue={searchParams.q ?? ""}
@@ -82,7 +74,7 @@ export default async function HomePage({
             placeholder="Search events, artists, venues..."
             className="field-input flex-1"
           />
-          <select name="city" defaultValue={searchParams.city ?? ""} className="field-input sm:w-[180px] text-paperDim">
+          <select name="city" defaultValue={searchParams.city ?? ""} className="field-input sm:w-[200px] text-paperDim">
             <option value="">All states</option>
             {NIGERIA_STATES.map((s) => (
               <option key={s} value={s}>{s}</option>
@@ -129,12 +121,12 @@ export default async function HomePage({
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
           {events.map((event: PartaeyEvent & { ticket_types: { price: number }[] }, i: number) => {
             const prices = event.ticket_types?.map((t) => t.price) ?? [];
             const lowest = prices.length ? Math.min(...prices) : null;
             return (
-              <ScrollReveal key={event.id} index={i % 6}>
+              <ScrollReveal key={event.id} index={i % 4}>
                 <EventCard event={event} lowestPrice={lowest} />
               </ScrollReveal>
             );

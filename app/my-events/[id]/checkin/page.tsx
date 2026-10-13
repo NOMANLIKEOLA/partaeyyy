@@ -1,6 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import TicketScanner from "@/components/TicketScanner";
+import BackButton from "@/components/BackButton";
 
 export default async function CheckInPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -17,6 +18,7 @@ export default async function CheckInPage({ params }: { params: { id: string } }
 
   return (
     <div className="max-w-[420px] mx-auto py-10 pb-16">
+      <BackButton href="/my-events" label="Back to my events" />
       <h1 className="font-display text-2xl font-bold mb-1.5">Check-in — {event.title}</h1>
       <p className="text-paperDim text-sm mb-6">{checkedIn ?? 0} of {totalTickets ?? 0} checked in</p>
       <TicketScanner eventId={event.id} />

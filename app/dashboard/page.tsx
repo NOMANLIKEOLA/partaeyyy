@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import EventCard from "@/components/EventCard";
+import ScrollReveal from "@/components/ScrollReveal";
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -16,7 +17,6 @@ export default async function DashboardPage() {
     .single();
 
   const firstName = profile?.full_name?.split(" ")[0];
-
   const today = new Date().toISOString().slice(0, 10);
 
   const [
@@ -26,23 +26,9 @@ export default async function DashboardPage() {
     { count: ticketCount },
     { count: myEventsCount }
   ] = await Promise.all([
-    supabase
-      .from("saved_events")
-      .select("events!inner(*, ticket_types(price))")
-      .eq("user_id", user.id)
-      .gte("events.event_date", today),
-    supabase
-      .from("orders")
-      .select("events!inner(*, ticket_types(price))")
-      .eq("user_id", user.id)
-      .eq("status", "paid")
-      .gte("events.event_date", today),
-    supabase
-      .from("orders")
-      .select("events!inner(*, ticket_types(price))")
-      .eq("user_id", user.id)
-      .eq("status", "paid")
-      .lt("events.event_date", today),
+    supabase.from("saved_events").select("events!inner(*, ticket_types(price))").eq("user_id", user.id).gte("events.event_date", today),
+    supabase.from("orders").select("events!inner(*, ticket_types(price))").eq("user_id", user.id).eq("status", "paid").gte("events.event_date", today),
+    supabase.from("orders").select("events!inner(*, ticket_types(price))").eq("user_id", user.id).eq("status", "paid").lt("events.event_date", today),
     supabase.from("tickets").select("id", { count: "exact", head: true }).eq("user_id", user.id),
     supabase.from("events").select("id", { count: "exact", head: true }).eq("organizer_id", user.id)
   ]);
@@ -64,13 +50,13 @@ export default async function DashboardPage() {
   return (
     <>
       <div className="pt-11 pb-1.5">
-        <h1 className="font-display text-3xl font-bold tracking-tight">
+        <h1 className="hero-title-sm font-display font-bold tracking-tight">
           Welcome back{firstName ? `, ${firstName}` : ""}
         </h1>
         <p className="text-paperDim text-sm mt-2">Here's what's happening with your account.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 my-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 my-8">
         <div className="card-float p-6.5">
           <div className="text-[13px] text-paperDim mb-4">Event bucket list</div>
           <div className="font-display text-[36px] font-bold">{bucketEvents.length}</div>
@@ -111,15 +97,18 @@ export default async function DashboardPage() {
 
       {bucketEvents.length === 0 ? (
         <div className="text-paperDim text-sm py-10 text-center">
-          Nothing saved yet — browse{" "}
-          <Link href="/" className="text-amber underline">discover</Link> and save an event, or buy a ticket.
+          Nothing saved yet — browse <Link href="/" className="text-amber underline">discover</Link> and save an event, or buy a ticket.
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mb-14">
-          {bucketEvents.map((event: any) => {
+          {bucketEvents.map((event: any, i: number) => {
             const prices = event.ticket_types?.map((t: any) => t.price) ?? [];
             const lowest = prices.length ? Math.min(...prices) : null;
-            return <EventCard key={event.id} event={event} lowestPrice={lowest} />;
+            return (
+              <ScrollReveal key={event.id} index={i % 6}>
+                <EventCard event={event} lowestPrice={lowest} />
+              </ScrollReveal>
+            );
           })}
         </div>
       )}

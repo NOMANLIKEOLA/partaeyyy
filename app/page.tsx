@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import EventCard from "@/components/EventCard";
+import ScrollReveal from "@/components/ScrollReveal";
+import PartyTicker from "@/components/PartyTicker";
 import { NIGERIA_STATES } from "@/lib/nigeria";
 import type { PartaeyEvent } from "@/lib/types";
 
@@ -51,49 +53,48 @@ export default async function HomePage({
   }
 
   const { data: events } = await query;
+  const { count: liveEventCount } = await supabase
+    .from("events")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "published")
+    .gte("event_date", today);
 
-  const heading = searchParams.city
-    ? `Events in ${searchParams.city}`
-    : "Trending across Nigeria";
+  const heading = searchParams.city ? `Events in ${searchParams.city}` : "Trending across Nigeria";
 
   return (
     <>
-      <section className="py-14 border-b border-hairline">
-        <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold leading-[1.1] tracking-tight max-w-[680px]">
-          Every event, <span className="text-amber">everywhere</span> in Nigeria.
+      <PartyTicker liveCount={liveEventCount ?? 0} />
+
+      <section className="py-10 sm:py-14 border-b border-hairline">
+        <h1 className="hero-title font-display font-bold tracking-tight max-w-[680px]">
+          Every event, <span className="party-gradient">everywhere</span> in Nigeria.
         </h1>
-        <p className="text-paperDim mt-3.5 max-w-[480px]">
+        <p className="text-paperDim mt-3.5 max-w-[480px] text-[14.5px] sm:text-base">
           Raves, concerts, comedy, conferences, festivals. Find what's happening in your state, or list your
           own event for your city to see.
         </p>
 
-       <form action="/" className="mt-7 flex flex-col sm:flex-row gap-2 sm:gap-0 sm:bg-panel sm:border sm:border-hairline sm:rounded-full sm:p-1.5 max-w-[640px]">
-            <input
-              name="q"
-              defaultValue={searchParams.q ?? ""}
-              type="text"
-              placeholder="Search events, artists, venues..."
-              className="flex-1 bg-panel sm:bg-transparent border border-hairline sm:border-none rounded-full sm:rounded-none outline-none px-4 py-3 text-sm"
-            />
-            <select
-              name="city"
-              defaultValue={searchParams.city ?? ""}
-              className="bg-panel sm:bg-transparent border border-hairline sm:border-none sm:border-l rounded-full sm:rounded-none outline-none px-4 sm:px-3 py-3 sm:py-0 text-sm text-paperDim"
-            >
-              <option value="">All states</option>
-              {NIGERIA_STATES.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-            {searchParams.category && searchParams.category !== "All" && (
-              <input type="hidden" name="category" value={searchParams.category} />
-            )}
-            <button className="bg-coral text-[#2A0C02] px-5.5 py-3 sm:py-0 rounded-full font-semibold text-sm">
-              Search
-            </button>
+        <form action="/" className="search-form mt-7 flex flex-col sm:flex-row gap-2.5 max-w-[680px]">
+          <input
+            name="q"
+            defaultValue={searchParams.q ?? ""}
+            type="text"
+            placeholder="Search events, artists, venues..."
+            className="field-input flex-1"
+          />
+          <select name="city" defaultValue={searchParams.city ?? ""} className="field-input sm:w-[180px] text-paperDim">
+            <option value="">All states</option>
+            {NIGERIA_STATES.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+          {searchParams.category && searchParams.category !== "All" && (
+            <input type="hidden" name="category" value={searchParams.category} />
+          )}
+          <button className="btn-primary sm:w-auto">Search</button>
         </form>
 
-        <div className="flex gap-2.5 flex-wrap mt-6">
+        <div className="flex gap-2 sm:gap-2.5 flex-wrap mt-6">
           {CATEGORIES.map((c) => (
             <Link
               key={c}
@@ -115,43 +116,41 @@ export default async function HomePage({
         )}
       </section>
 
-      <div className="flex items-baseline justify-between my-9">
-        <h2 className="text-xl font-bold font-display">{heading}</h2>
+      <div className="flex items-baseline justify-between my-7 sm:my-9">
+        <h2 className="text-lg sm:text-xl font-bold font-display">{heading}</h2>
       </div>
 
       {!events || events.length === 0 ? (
         <div className="text-paperDim text-sm py-16 text-center">
           {searchParams.city ? (
-            <>
-              No events in {searchParams.city} yet - be the first to{" "}
-              <Link href="/create" className="text-amber underline">list one</Link> and put your city on the map.
-            </>
+            <>No events in {searchParams.city} yet — be the first to <Link href="/create" className="text-amber underline">list one</Link> and put your city on the map.</>
           ) : (
-            <>
-              No events yet - be the first to{" "}
-              <Link href="/create" className="text-amber underline">list one</Link>.
-            </>
+            <>No events yet — be the first to <Link href="/create" className="text-amber underline">list one</Link>.</>
           )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-          {events.map((event: PartaeyEvent & { ticket_types: { price: number }[] }) => {
+          {events.map((event: PartaeyEvent & { ticket_types: { price: number }[] }, i: number) => {
             const prices = event.ticket_types?.map((t) => t.price) ?? [];
             const lowest = prices.length ? Math.min(...prices) : null;
-            return <EventCard key={event.id} event={event} lowestPrice={lowest} />;
+            return (
+              <ScrollReveal key={event.id} index={i % 6}>
+                <EventCard event={event} lowestPrice={lowest} />
+              </ScrollReveal>
+            );
           })}
         </div>
       )}
 
       <div className="my-10 sm:my-14 bg-panel2 border border-dashed border-hairline rounded-card p-5 sm:p-7 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-5">
         <div>
-          <h3 className="text-lg font-semibold mb-1.5">Running an event? List it on Partaey.</h3>
-          <p className="text-paperDim text-[13.5px]">
-            Set up ticket tiers, sell with Paystack, and track sales from one dashboard - free to list, and
+          <h3 className="text-base sm:text-lg font-semibold mb-1.5">Running an event? List it on Partaey.</h3>
+          <p className="text-paperDim text-[13px] sm:text-[13.5px]">
+            Set up ticket tiers, sell with Paystack, and track sales from one dashboard — free to list, and
             seen by everyone in your state.
           </p>
         </div>
-        <Link href="/create" className="btn-primary whitespace-nowrap">Create an event</Link>
+        <Link href="/create" className="btn-primary sm:w-auto text-center">Create an event</Link>
       </div>
     </>
   );

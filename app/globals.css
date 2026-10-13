@@ -5,8 +5,6 @@
 @tailwind utilities;
 
 :root {
-  /* Dark theme (default) — values are R G B triplets so Tailwind's
-     opacity modifiers (e.g. bg-ink/90) keep working. */
   --color-ink: 13 11 20;
   --color-panel: 23 20 31;
   --color-panel2: 32 28 43;
@@ -19,7 +17,6 @@
 }
 
 html.light {
-  /* Light theme — beige base, sun-yellow accent */
   --color-ink: 246 239 221;
   --color-panel: 239 230 204;
   --color-panel2: 232 220 187;
@@ -37,23 +34,89 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
+/* Fluid, party-bold display type — scales smoothly between mobile and
+   desktop instead of jumping between fixed Tailwind breakpoints. */
+.hero-title {
+  font-size: clamp(2rem, 1.3rem + 3.2vw, 3.6rem);
+  line-height: 1.08;
+}
+
+.hero-title-sm {
+  font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2rem);
+  line-height: 1.15;
+}
+
+/* Gradient "screams party" text treatment — used sparingly, on the one
+   word that should pop. color-mix() blends the two accent tokens live,
+   so it stays correct in both themes without a second gradient defined. */
+.party-gradient {
+  background: linear-gradient(
+    100deg,
+    rgb(var(--color-amber)),
+    color-mix(in srgb, rgb(var(--color-amber)) 40%, rgb(var(--color-coral)))
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Card container queries — badges/date-stamp scale to the card's own
+   width, not the viewport, so cards stay legible in any grid density. */
+.event-card-shell {
+  container-type: inline-size;
+  container-name: card;
+}
+@container card (max-width: 240px) {
+  .card-tight-hide {
+    display: none;
+  }
+}
+
+/* :has() — the search bar gets a visible amber ring the moment it has
+   real content, without any JS state. */
+.search-form:has(input[name="q"]:not(:placeholder-shown)) {
+  outline: 1px solid rgb(var(--color-amber) / 0.5);
+  border-radius: 999px;
+}
+
+
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @layer components {
   .chip {
-    @apply border border-hairline px-4 py-2 rounded-full text-sm text-paperDim bg-panel cursor-pointer;
+    @apply border border-hairline px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-sm text-paperDim bg-panel cursor-pointer whitespace-nowrap transition;
   }
   .chip.on {
     @apply bg-amber text-[#241B00] border-amber font-semibold;
   }
   .btn-primary {
-    @apply bg-amber text-[#241B00] font-semibold rounded-full px-5 py-3 hover:brightness-95 transition;
+    @apply bg-amber text-[#241B00] font-semibold rounded-full px-6 sm:px-7 py-3.5 hover:brightness-95 transition whitespace-nowrap;
   }
   .btn-ghost {
-    @apply bg-transparent border border-hairline text-paper rounded-full px-4 py-2 text-sm;
+    @apply bg-transparent border border-hairline text-paper rounded-full px-5 py-2.5 text-sm whitespace-nowrap transition hover:border-amber;
   }
   .field-input {
-    @apply w-full bg-panel border border-hairline text-paper rounded-[10px] px-3.5 py-3 text-sm outline-none focus:border-amber transition;
+    @apply w-full bg-panel border border-hairline text-paper rounded-[10px] px-4 py-3 text-sm outline-none focus:border-amber transition;
   }
   .card-float {
     @apply bg-panel border border-hairline rounded-card transition hover:-translate-y-1.5 hover:shadow-[0_18px_32px_rgba(0,0,0,0.25)] hover:border-amber;
   }
+  .back-link {
+    @apply inline-flex items-center gap-1.5 text-paperDim text-sm hover:text-paper transition mb-6;
+  }
+
+  .btn-primary {
+  @apply bg-amber text-[#241B00] font-semibold rounded-full px-6 sm:px-7 py-3.5 hover:brightness-95 transition whitespace-nowrap max-sm:px-5 max-sm:py-3 max-sm:text-[14px];
+}
+.chip {
+  @apply border border-hairline px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-sm text-paperDim bg-panel cursor-pointer whitespace-nowrap transition max-sm:px-3.5 max-sm:py-2 max-sm:text-[13px];
+}
 }

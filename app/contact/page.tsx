@@ -1,10 +1,13 @@
+import BackButton from "@/components/BackButton";
+
 const CONTACT_EMAIL = "olaishim5@gmail.com";
 const CONTACT_PHONE = "0705 883 9192";
 
 export default function ContactPage() {
   return (
     <div className="max-w-[480px] mx-auto py-12 pb-20">
-      <h1 className="font-display text-[26px] font-bold mb-1.5">Contact us</h1>
+      <BackButton href="/" label="Back to discover" />
+      <h1 className="hero-title-sm font-display font-bold mb-1.5">Contact us</h1>
       <p className="text-paperDim text-sm mb-8">
         Questions, event reports, or partnership ideas — reach out directly.
       </p>
@@ -22,19 +25,12 @@ export default function ContactPage() {
 
       <div className="text-[13px] text-paperDim mb-3">Or send a message directly:</div>
 
-      <form
-        action={`mailto:${CONTACT_EMAIL}`}
-        method="post"
-        encType="text/plain"
-        className="space-y-4"
-      >
+      <form action={`mailto:${CONTACT_EMAIL}`} method="post" encType="text/plain" className="space-y-4">
         <input className="field-input" name="name" placeholder="Your name" required />
         <input className="field-input" name="email" type="email" placeholder="Your email" required />
         <textarea className="field-input min-h-[120px]" name="message" placeholder="What's on your mind?" required />
         <button type="submit" className="btn-primary w-full">Send message</button>
-        <p className="text-[12px] text-paperDim">
-          This opens your email app with the message pre-filled to {CONTACT_EMAIL}.
-        </p>
+        <p className="text-[12px] text-paperDim">This opens your email app with the message pre-filled to {CONTACT_EMAIL}.</p>
       </form>
     </div>
   );

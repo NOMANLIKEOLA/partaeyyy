@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion, useReducedMotion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 
 export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const router = useRouter();
   const supabase = createClient();
+  const reduceMotion = useReducedMotion();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -29,7 +31,6 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
       return;
     }
 
-    // signup
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error || !data.user) {
       setLoading(false);
@@ -37,18 +38,9 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
       return;
     }
 
-    // The trigger already created a bare row in `users` — fill in the rest.
-    // This only succeeds if the session is active (i.e. email confirmation
-    // is off, or the user is auto-confirmed). If you have email confirmation
-    // ON, this update will silently fail until they confirm and log in —
-    // in that case, move this into a "complete your profile" step post-login.
     const { error: profileError } = await supabase
       .from("users")
-      .update({
-        full_name: fullName,
-        phone,
-        date_of_birth: dob || null
-      })
+      .update({ full_name: fullName, phone, date_of_birth: dob || null })
       .eq("id", data.user.id);
 
     setLoading(false);
@@ -63,7 +55,13 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 max-w-[380px] mx-auto py-16">
+    <motion.form
+      onSubmit={handleSubmit}
+      className="space-y-4 max-w-[380px] mx-auto py-16"
+      initial={reduceMotion ? undefined : { opacity: 0, y: 12 }}
+      animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+    >
       <h1 className="font-display text-2xl font-bold mb-1">
         {mode === "login" ? "Log in" : "Create your account"}
       </h1>
@@ -89,6 +87,6 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
       <button type="submit" disabled={loading} className="btn-primary w-full">
         {loading ? "Please wait..." : mode === "login" ? "Log in" : "Sign up"}
       </button>
-    </form>
+    </motion.form>
   );
 }

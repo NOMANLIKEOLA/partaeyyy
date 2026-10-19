@@ -25,25 +25,42 @@ export default async function MyTicketsPage() {
         <div className="text-paperDim text-sm py-16 text-center">No tickets yet.</div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          {tickets.map((t: any, i: number) => (
-            <ScrollReveal key={t.id} index={i % 6}>
-              <div className="bg-panel border border-hairline rounded-card p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <div className="font-medium">{t.events?.title}</div>
-                    <div className="text-[12.5px] text-paperDim">
-                      {t.ticket_types?.name ?? "General"} ·{" "}
-                      {new Date(t.events?.event_date).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}
+          {tickets.map((t: any, i: number) => {
+            const isVoid = t.status === "void";
+            const isUsed = t.status === "used";
+
+            return (
+              <ScrollReveal key={t.id} index={i % 6}>
+                <div className="bg-panel border border-hairline rounded-card p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <div className="font-medium">{t.events?.title}</div>
+                      <div className="text-[12.5px] text-paperDim">
+                        {t.ticket_types?.name ?? "General"} ·{" "}
+                        {new Date(t.events?.event_date).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}
+                      </div>
                     </div>
+                    <span
+                      className={`text-[11px] px-2 py-0.5 rounded-full ${
+                        isVoid ? "bg-coral/20 text-coral" : isUsed ? "bg-panel2 text-paperDim" : "bg-teal/20 text-teal"
+                      }`}
+                    >
+                      {isVoid ? "Cancelled" : isUsed ? "Used" : "Valid"}
+                    </span>
                   </div>
-                  <span className={`text-[11px] px-2 py-0.5 rounded-full ${t.status === "used" ? "bg-panel2 text-paperDim" : "bg-teal/20 text-teal"}`}>
-                    {t.status === "used" ? "Used" : "Valid"}
-                  </span>
+
+                  {isVoid ? (
+                    <p className="text-[12.5px] text-paperDim">
+                      This event was cancelled. If you paid, your refund is on its way and can take a few
+                      business days to reach your bank.
+                    </p>
+                  ) : (
+                    <TicketQR code={t.code} />
+                  )}
                 </div>
-                <TicketQR code={t.code} />
-              </div>
-            </ScrollReveal>
-          ))}
+              </ScrollReveal>
+            );
+          })}
         </div>
       )}
     </div>

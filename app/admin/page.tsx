@@ -18,6 +18,7 @@ export default async function AdminDashboardPage() {
     { data: paidOrders },
     { count: openReports },
     { count: flaggedPayouts },
+    { count: openAlerts },
     { data: recentEvents },
     { data: recentOrders }
   ] = await Promise.all([
@@ -29,6 +30,7 @@ export default async function AdminDashboardPage() {
     admin.from("orders").select("amount, platform_fee, organizer_amount, payout_status").eq("status", "paid"),
     admin.from("event_reports").select("id", { count: "exact", head: true }).eq("status", "open"),
     admin.from("events").select("id", { count: "exact", head: true }).eq("payout_flagged", true),
+    admin.from("admin_alerts").select("id", { count: "exact", head: true }).eq("status", "open"),
     admin
       .from("events")
       .select("id, title, city, category, status, pending_review, created_at, users:organizer_id(full_name)")
@@ -41,11 +43,24 @@ export default async function AdminDashboardPage() {
       .limit(8)
   ]);
 
-  const totalGMV = (paidOrders ?? []).reduce((s: number, r: { amount: any; }) => s + Number(r.amount), 0);
-  const totalPlatformFees = (paidOrders ?? []).reduce((s: number, r: { platform_fee: any; }) => s + Number(r.platform_fee ?? 0), 0);
-  const heldFunds = (paidOrders ?? [])
-    .filter((r: { payout_status: string; }) => r.payout_status === "held" || r.payout_status === "main_released")
-    .reduce((s: number, r: { organizer_amount: any; }) => s + Number(r.organizer_amount ?? 0), 0);
+  // Refunded orders are money returned to buyers, so they don't count as sales.
+  const liveOrders = (paidOrders ?? []).filter((r: { payout_status: string }) => r.payout_status !== "refunded");
+  const totalGMV = liveOrders.reduce((s: number, r: { amount: any }) => s + Number(r.amount), 0);
+  const totalPlatformFees = liveOrders.reduce((s: number, r: { platform_fee: any }) => s + Number(r.platform_fee ?? 0), 0);
+  const heldFunds = liveOrders
+    .filter((r: { payout_status: string }) => r.payout_status === "held" || r.payout_status === "main_released")
+    .reduce((s: number, r: { organizer_amount: any }) => s + Number(r.organizer_amount ?? 0), 0);
+
+  const badge = (n: number | null, tone: "amber" | "coral") =>
+    (n ?? 0) > 0 ? (
+      <span
+        className={`ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-semibold ${
+          tone === "amber" ? "bg-amber text-[#241B00]" : "bg-coral text-[#2A0C02]"
+        }`}
+      >
+        {n}
+      </span>
+    ) : null;
 
   return (
     <div className="py-11 pb-16">
@@ -55,30 +70,10 @@ export default async function AdminDashboardPage() {
           <p className="text-paperDim text-sm mt-2">Day-to-day overview of Partaey.</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Link href="/admin/review" className="btn-ghost relative">
-            Review queue
-            {(pendingReview ?? 0) > 0 && (
-              <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber text-[#241B00] text-[11px] font-semibold">
-                {pendingReview}
-              </span>
-            )}
-          </Link>
-          <Link href="/admin/reports" className="btn-ghost relative">
-            Reports
-            {(openReports ?? 0) > 0 && (
-              <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-coral text-[#2A0C02] text-[11px] font-semibold">
-                {openReports}
-              </span>
-            )}
-          </Link>
-          <Link href="/admin/payouts" className="btn-ghost relative">
-            Flagged payouts
-            {(flaggedPayouts ?? 0) > 0 && (
-              <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-coral text-[#2A0C02] text-[11px] font-semibold">
-                {flaggedPayouts}
-              </span>
-            )}
-          </Link>
+          <Link href="/admin/alerts" className="btn-ghost">Alerts{badge(openAlerts, "coral")}</Link>
+          <Link href="/admin/review" className="btn-ghost">Review queue{badge(pendingReview, "amber")}</Link>
+          <Link href="/admin/reports" className="btn-ghost">Reports{badge(openReports, "coral")}</Link>
+          <Link href="/admin/payouts" className="btn-ghost">Flagged payouts{badge(flaggedPayouts, "coral")}</Link>
         </div>
       </div>
 
@@ -139,7 +134,8 @@ export default async function AdminDashboardPage() {
                   </span>
                 </div>
                 <div className="text-[11.5px] text-paperDim mt-1">
-                  {e.users?.full_name ?? "—"} · {e.city} · {new Date(e.created_at).toLocaleDateString("en-US", { day: "numeric", month: "short" })}
+                  {(Array.isArray(e.users) ? e.users[0]?.full_name : e.users?.full_name) ?? "—"} · {e.city} ·{" "}
+                  {new Date(e.created_at).toLocaleDateString("en-US", { day: "numeric", month: "short" })}
                 </div>
               </Link>
             ))}
@@ -153,11 +149,13 @@ export default async function AdminDashboardPage() {
             {(recentOrders ?? []).map((o: any) => (
               <div key={o.id} className="bg-panel border border-hairline rounded-lg p-3.5">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="text-sm font-medium truncate">{o.events?.title ?? "Deleted event"}</div>
+                  <div className="text-sm font-medium truncate">
+                    {(Array.isArray(o.events) ? o.events[0]?.title : o.events?.title) ?? "Deleted event"}
+                  </div>
                   <span className="font-mono text-[13px] text-teal shrink-0">₦{Number(o.amount).toLocaleString()}</span>
                 </div>
                 <div className="text-[11.5px] text-paperDim mt-1 flex items-center gap-2">
-                  <span>{o.users?.full_name ?? "—"}</span>
+                  <span>{(Array.isArray(o.users) ? o.users[0]?.full_name : o.users?.full_name) ?? "—"}</span>
                   <span>·</span>
                   <span className="capitalize">{o.payout_status.replace("_", " ")}</span>
                   <span>·</span>

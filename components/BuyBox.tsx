@@ -11,6 +11,8 @@ declare global {
   }
 }
 
+const MAX_PER_TIER = 10;
+
 export default function BuyBox({
   eventId,
   eventTitle,
@@ -34,19 +36,22 @@ export default function BuyBox({
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // This total is a display estimate only. The server prices the real
+  // checkout from the database and returns the amount to charge.
   const total = ticketTypes.reduce((sum, t) => sum + (qty[t.id] ?? 0) * t.price, 0);
   const totalQty = Object.values(qty).reduce((a, b) => a + b, 0);
 
   const ageBlocked = is18Plus && userId && (viewerAge === null || viewerAge < 18);
 
-  function setQuantity(id: string, delta: number, max: number) {
+  function setQuantity(id: string, delta: number, left: number) {
     setQty((prev) => {
+      const max = Math.min(left, MAX_PER_TIER);
       const next = Math.max(0, Math.min(max, (prev[id] ?? 0) + delta));
       return { ...prev, [id]: next };
     });
   }
 
-  function startCheckout() {
+  async function startCheckout() {
     if (!userId || !userEmail) {
       setError("Log in to buy tickets.");
       return;
@@ -64,43 +69,65 @@ export default function BuyBox({
       return;
     }
     setError(null);
-
-    const chosen = ticketTypes.find((t) => (qty[t.id] ?? 0) > 0);
-    if (!chosen || !window.PaystackPop) return;
-
     setPaying(true);
+
+    const items = ticketTypes
+      .filter((t) => (qty[t.id] ?? 0) > 0)
+      .map((t) => ({ ticketTypeId: t.id, quantity: qty[t.id] }));
+
+    let data: any;
+    try {
+      const res = await fetch("/api/checkout/prepare", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId, items })
+      });
+      data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Couldn't start checkout.");
+        setPaying(false);
+        return;
+      }
+    } catch {
+      setError("Network error. Try again.");
+      setPaying(false);
+      return;
+    }
+
+    // Free tickets are issued by the server immediately.
+    if (data.free) {
+      window.location.href = "/tickets?claimed=1";
+      return;
+    }
+
+    if (!window.PaystackPop) {
+      setError("The payment window is still loading. Try again in a moment.");
+      setPaying(false);
+      return;
+    }
 
     const handler = window.PaystackPop.setup({
       key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
-      email: userEmail,
-      amount: Math.round(total * 100),
+      email: data.email,
+      amount: Math.round(data.amount * 100),
       currency: "NGN",
-      // No subaccount split anymore — payment goes fully to the platform
-      // balance and is released to the organizer later (see /api/payouts/release),
-      // after a holdback window and reserve period.
-      metadata: {
-        event_id: eventId,
-        ticket_type_id: chosen.id,
-        quantity: qty[chosen.id]
-      },
+      ref: data.reference,
       callback: (response: { reference: string }) => {
         fetch("/api/paystack/verify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            reference: response.reference,
-            eventId,
-            ticketTypeId: chosen.id,
-            quantity: qty[chosen.id],
-            amount: total
-          })
-        }).then((res) => {
-          setPaying(false);
+          body: JSON.stringify({ reference: response.reference })
+        }).then(async (res) => {
           if (res.ok) {
-            window.location.href = "/dashboard?paid=1";
-          } else {
-            setError("Payment received but confirmation failed — contact support with your reference.");
+            window.location.href = "/tickets?paid=1";
+            return;
           }
+          const body = await res.json().catch(() => ({}));
+          setPaying(false);
+          setError(
+            body.error ??
+              `Payment received but confirmation failed. Contact support with reference ${response.reference}.`
+          );
         });
       },
       onClose: () => setPaying(false)
@@ -159,7 +186,9 @@ export default function BuyBox({
                 <div key={t.id} className="flex justify-between items-center py-3.5 border-b border-hairline last:border-b-0">
                   <div>
                     <div className="text-sm font-medium">{t.name}</div>
-                    <div className="text-[11.5px] text-paperDim mt-0.5">{left} left</div>
+                    <div className="text-[11.5px] text-paperDim mt-0.5">
+                      {left > 0 ? `${left} left` : "Sold out"}
+                    </div>
                   </div>
                   <div className="flex items-center">
                     <span className="font-mono text-[15px]">
@@ -169,7 +198,7 @@ export default function BuyBox({
                       <button
                         className="w-6 h-6 rounded-full border border-hairline text-sm"
                         onClick={() => setQuantity(t.id, -1, left)}
-                        disabled={!!ageBlocked}
+                        disabled={!!ageBlocked || left <= 0}
                       >
                         &minus;
                       </button>
@@ -177,7 +206,7 @@ export default function BuyBox({
                       <button
                         className="w-6 h-6 rounded-full border border-hairline text-sm"
                         onClick={() => setQuantity(t.id, 1, left)}
-                        disabled={!!ageBlocked}
+                        disabled={!!ageBlocked || left <= 0}
                       >
                         +
                       </button>
@@ -201,7 +230,11 @@ export default function BuyBox({
                   disabled={paying || !!ageBlocked}
                   onClick={startCheckout}
                 >
-                  {paying ? "Opening Paystack..." : `Pay ₦${total.toLocaleString()} with Paystack`}
+                  {paying
+                    ? "Please wait..."
+                    : totalQty > 0 && total === 0
+                      ? "Get free ticket"
+                      : `Pay ₦${total.toLocaleString()} with Paystack`}
                 </button>
               </form>
             )}

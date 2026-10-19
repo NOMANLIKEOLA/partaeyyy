@@ -10,9 +10,17 @@ export async function POST(req: NextRequest) {
 
   const admin = createServiceClient();
 
-  const { data: event } = await admin.from("events").select("organizer_id").eq("id", eventId).single();
+  const { data: event } = await admin
+    .from("events")
+    .select("organizer_id, status")
+    .eq("id", eventId)
+    .single();
+
   if (!event || event.organizer_id !== user.id) {
     return NextResponse.json({ error: "Not authorized to scan for this event" }, { status: 403 });
+  }
+  if (event.status === "cancelled") {
+    return NextResponse.json({ result: "invalid", message: "This event was cancelled." });
   }
 
   const { data: ticket } = await admin
@@ -27,6 +35,9 @@ export async function POST(req: NextRequest) {
   if (ticket.event_id !== eventId) {
     return NextResponse.json({ result: "invalid", message: "This ticket is for a different event." });
   }
+  if (ticket.status === "void") {
+    return NextResponse.json({ result: "invalid", message: "This ticket was cancelled and refunded." });
+  }
   if (ticket.status === "used") {
     return NextResponse.json({
       result: "already_used",
@@ -34,9 +45,8 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // Atomic: this UPDATE only affects a row if it's still 'valid' at the
-  // moment it runs — Postgres's row-level locking makes double-scanning
-  // (even from two phones at once) impossible to both succeed.
+  // Atomic: this UPDATE only touches a row that is still 'valid' at the
+  // moment it runs, so two simultaneous scans can't both succeed.
   const { data: updated } = await admin
     .from("tickets")
     .update({ status: "used", checked_in_at: new Date().toISOString() })
@@ -46,7 +56,7 @@ export async function POST(req: NextRequest) {
     .maybeSingle();
 
   if (!updated) {
-    return NextResponse.json({ result: "already_used", message: "Already checked in — just now, by someone else." });
+    return NextResponse.json({ result: "already_used", message: "Already checked in, just now, by someone else." });
   }
 
   return NextResponse.json({ result: "valid", message: "Checked in ✓" });
